@@ -6,7 +6,7 @@ import { completarPerfilAction } from "./actions";
 export default async function CompletarPerfilPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; redirect?: string };
 }) {
   const supabase = createClient();
   const {
@@ -33,6 +33,9 @@ export default async function CompletarPerfilPage({
         encType="multipart/form-data"
         className="space-y-5"
       >
+        {searchParams.redirect ? (
+          <input type="hidden" name="redirect" value={searchParams.redirect} />
+        ) : null}
         <div>
           <label
             htmlFor="nombre"

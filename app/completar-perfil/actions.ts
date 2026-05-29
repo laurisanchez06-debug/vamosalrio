@@ -17,6 +17,11 @@ function normalizeInstagram(handle: string) {
   return handle.replace(/^@+/, "").trim() || null;
 }
 
+function safeRedirect(value: FormDataEntryValue | null) {
+  const s = String(value ?? "").trim();
+  return s.startsWith("/") ? s : "";
+}
+
 export async function completarPerfilAction(formData: FormData) {
   const supabase = createClient();
   const {
@@ -31,10 +36,12 @@ export async function completarPerfilAction(formData: FormData) {
   const bio = clean(formData.get("bio")).slice(0, 200);
   const instagram = normalizeInstagram(clean(formData.get("instagram_handle")));
   const foto = formData.get("foto");
+  const redirectTo = safeRedirect(formData.get("redirect"));
+  const qs = redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : "";
 
   if (!nombre) {
     redirect(
-      `/completar-perfil?error=${encodeURIComponent("El nombre es obligatorio.")}`,
+      `/completar-perfil?error=${encodeURIComponent("El nombre es obligatorio.")}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`,
     );
   }
 
@@ -60,7 +67,9 @@ export async function completarPerfilAction(formData: FormData) {
       fotoUrl = publicUrl.publicUrl;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No pudimos subir la foto.";
-      redirect(`/completar-perfil?error=${encodeURIComponent(msg)}`);
+      redirect(
+        `/completar-perfil?error=${encodeURIComponent(msg)}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`,
+      );
     }
   }
 
@@ -76,9 +85,10 @@ export async function completarPerfilAction(formData: FormData) {
 
   if (upsertError) {
     redirect(
-      `/completar-perfil?error=${encodeURIComponent(upsertError.message)}`,
+      `/completar-perfil?error=${encodeURIComponent(upsertError.message)}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`,
     );
   }
 
-  redirect("/feed");
+  redirect(redirectTo || "/feed");
+  void qs;
 }

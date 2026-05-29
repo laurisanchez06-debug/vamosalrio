@@ -5,7 +5,7 @@ import { signUpAction } from "./actions";
 export default function RegistroPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; redirect?: string };
 }) {
   return (
     <AuthCard
@@ -14,13 +14,19 @@ export default function RegistroPage({
       footer={
         <>
           ¿Ya tenés cuenta?{" "}
-          <Link href="/login" className="font-semibold text-rio">
+          <Link
+            href={`/login${searchParams.redirect ? `?redirect=${encodeURIComponent(searchParams.redirect)}` : ""}`}
+            className="font-semibold text-rio"
+          >
             Entrar
           </Link>
         </>
       }
     >
       <form action={signUpAction} className="space-y-4">
+        {searchParams.redirect ? (
+          <input type="hidden" name="redirect" value={searchParams.redirect} />
+        ) : null}
         <div>
           <label
             htmlFor="email"
