@@ -5,6 +5,7 @@ import Toast from "@/components/Toast";
 import {
   aceptarSolicitudAction,
   cancelarSalidaAction,
+  finalizarSalidaAction,
   rechazarSolicitudAction,
 } from "./actions";
 
@@ -34,6 +35,7 @@ type Props = {
   titulo: string;
   fechaTexto: string;
   punto: string | null;
+  estadoSalida: string;
   pendientes: Pendiente[];
   confirmados: ConfirmadoMin[];
 };
@@ -60,15 +62,38 @@ export default function HostPanel({
   titulo,
   fechaTexto,
   punto,
+  estadoSalida,
   pendientes,
   confirmados,
 }: Props) {
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
   const [toast, setToast] = useState<
     { msg: string; tipo: "info" | "error" } | null
   >(null);
   const [, startTransition] = useTransition();
+
+  const puedeFinalizar = estadoSalida === "abierta" || estadoSalida === "completa";
+  const puedeCancelar = estadoSalida === "abierta" || estadoSalida === "completa";
+
+  function finalizarSalida() {
+    if (typeof window === "undefined") return;
+    if (
+      !window.confirm(
+        "¿Marcar la salida como finalizada? Vas a poder calificar a la tripulación.",
+      )
+    ) {
+      return;
+    }
+    setFinalizando(true);
+    startTransition(async () => {
+      const r = await finalizarSalidaAction(salidaId);
+      setFinalizando(false);
+      if ("error" in r) showToast(r.error, "error");
+      else showToast("Salida finalizada ✓");
+    });
+  }
 
   function showToast(msg: string, tipo: "info" | "error" = "info") {
     setToast({ msg, tipo });
@@ -283,24 +308,47 @@ export default function HostPanel({
       </section>
 
       {/* ─── Zona de peligro ─────────────────────────────────────────── */}
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-arena">
-          Zona de peligro
-        </h2>
-        <div className="mt-3 rounded-2xl border border-arena/30 bg-white p-4 shadow-sm">
-          <p className="text-sm text-tinta/70">
-            Si la salida ya no va, cancelala. La gente confirmada queda avisada.
-          </p>
-          <button
-            type="button"
-            onClick={cancelarSalida}
-            disabled={cancelando}
-            className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-arena bg-crema px-4 text-sm font-semibold text-arena active:scale-[0.98] disabled:opacity-60"
-          >
-            {cancelando ? "Cancelando…" : "Cancelar salida"}
-          </button>
-        </div>
-      </section>
+      {(puedeFinalizar || puedeCancelar) ? (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-arena">
+            Zona de peligro
+          </h2>
+          <div className="mt-3 space-y-3 rounded-2xl border border-arena/30 bg-white p-4 shadow-sm">
+            {puedeFinalizar ? (
+              <>
+                <p className="text-sm text-tinta/70">
+                  Cuando vuelvan del río, marcala como finalizada para que la
+                  tripulación pueda calificarse.
+                </p>
+                <button
+                  type="button"
+                  onClick={finalizarSalida}
+                  disabled={finalizando}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-rio px-4 text-sm font-semibold text-crema shadow-sm shadow-rio/20 active:scale-[0.98] disabled:opacity-60"
+                >
+                  {finalizando ? "Finalizando…" : "Finalizar salida"}
+                </button>
+              </>
+            ) : null}
+
+            {puedeCancelar ? (
+              <>
+                <p className="text-sm text-tinta/70">
+                  Si la salida ya no va, cancelala. La gente confirmada queda avisada.
+                </p>
+                <button
+                  type="button"
+                  onClick={cancelarSalida}
+                  disabled={cancelando}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-arena bg-crema px-4 text-sm font-semibold text-arena active:scale-[0.98] disabled:opacity-60"
+                >
+                  {cancelando ? "Cancelando…" : "Cancelar salida"}
+                </button>
+              </>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {toast ? <Toast mensaje={toast.msg} tipo={toast.tipo} /> : null}
     </div>

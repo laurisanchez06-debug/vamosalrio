@@ -121,6 +121,33 @@ export async function rechazarSolicitudAction(
   return { ok: true };
 }
 
+export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
+  const session = await getSessionUserOrError();
+  if (!session.user) return { error: session.error! };
+  const { supabase, user } = session;
+
+  const { data: salida } = await supabase
+    .from("salidas")
+    .select("host_id, estado")
+    .eq("id", salidaId)
+    .maybeSingle();
+
+  if (!salida) return { error: "No encontramos la salida." };
+  if (salida.host_id !== user.id) return { error: "No sos el host." };
+  if (salida.estado !== "abierta" && salida.estado !== "completa") {
+    return { error: "Esta salida ya no se puede finalizar." };
+  }
+
+  const { error } = await supabase
+    .from("salidas")
+    .update({ estado: "finalizada" })
+    .eq("id", salidaId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/salida/${salidaId}`);
+  return { ok: true };
+}
+
 export async function cancelarSalidaAction(salidaId: string) {
   const session = await getSessionUserOrError();
   if (!session.user) {

@@ -7,9 +7,14 @@ import {
   formatFechaLarga,
   formatPesos,
 } from "@/lib/format";
+import AutoToast from "@/components/AutoToast";
 import BotonParticipar from "./BotonParticipar";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
+
+const TOAST_MENSAJES: Record<string, string> = {
+  "calificaciones-enviadas": "¡Calificaciones enviadas!",
+};
 
 type Costo = { concepto: string; monto: number };
 
@@ -70,7 +75,7 @@ export default async function SalidaDetallePage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { nueva?: string };
+  searchParams: { nueva?: string; toast?: string };
 }) {
   const supabase = createClient();
 
@@ -184,6 +189,26 @@ export default async function SalidaDetallePage({
   const cuposCompletos = cuposLibres === 0 || salida!.estado !== "abierta";
   const recienCreada = searchParams.nueva === "1";
 
+  const isFinalizadaOPasada =
+    salida!.estado === "finalizada" ||
+    new Date(salida!.fecha_hora).getTime() < Date.now();
+  const isCancelada = salida!.estado === "cancelada";
+
+  // ¿Puede calificar / ya calificó?
+  const usuarioParticipo =
+    !!user && (isHost || estadoParticipacion === "aceptado");
+  let yaCalifico = false;
+  if (user && usuarioParticipo && isFinalizadaOPasada && !isCancelada) {
+    const { count } = await supabase
+      .from("calificaciones")
+      .select("id", { count: "exact", head: true })
+      .eq("salida_id", salida!.id)
+      .eq("from_user", user.id);
+    yaCalifico = (count ?? 0) > 0;
+  }
+  const puedeCalificar =
+    usuarioParticipo && isFinalizadaOPasada && !isCancelada && !yaCalifico;
+
   const shareProps = {
     titulo: salida!.titulo,
     fechaTexto: formatFechaCorta(salida!.fecha_hora),
@@ -275,7 +300,40 @@ export default async function SalidaDetallePage({
 
       {/* CTA principal */}
       <div className="mt-6">
-        {!user ? (
+        {isCancelada ? (
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-6 text-base font-semibold text-tinta/50"
+          >
+            Salida cancelada
+          </button>
+        ) : isFinalizadaOPasada ? (
+          puedeCalificar ? (
+            <Link
+              href={`/salida/${salida!.id}/calificar`}
+              className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 active:scale-[0.98]"
+            >
+              Calificá a la tripulación →
+            </Link>
+          ) : usuarioParticipo && yaCalifico ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-6 text-base font-semibold text-tinta/50"
+            >
+              Ya calificaste esta salida ✓
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-6 text-base font-semibold text-tinta/50"
+            >
+              Salida finalizada
+            </button>
+          )
+        ) : !user ? (
           <Link
             href={`/registro?redirect=${encodeURIComponent(`/salida/${salida!.id}`)}`}
             className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 active:scale-[0.98]"
@@ -448,9 +506,14 @@ export default async function SalidaDetallePage({
           titulo={salida!.titulo}
           fechaTexto={formatFechaCorta(salida!.fecha_hora)}
           punto={salida!.punto_encuentro_texto}
+          estadoSalida={salida!.estado}
           pendientes={pendientes}
           confirmados={confirmados}
         />
+      ) : null}
+
+      {searchParams.toast && TOAST_MENSAJES[searchParams.toast] ? (
+        <AutoToast mensaje={TOAST_MENSAJES[searchParams.toast]} />
       ) : null}
     </div>
   );
