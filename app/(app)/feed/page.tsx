@@ -1,9 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import AutoToast from "@/components/AutoToast";
 import FeedClient, { type SalidaFeed } from "./FeedClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function FeedPage() {
+const TOAST_MENSAJES: Record<string, string> = {
+  "salida-cancelada": "Salida cancelada",
+};
+
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: { toast?: string };
+}) {
   const supabase = createClient();
 
   const { data } = await supabase
@@ -29,6 +38,10 @@ export default async function FeedPage() {
       </header>
 
       <FeedClient salidas={salidas} />
+
+      {searchParams.toast && TOAST_MENSAJES[searchParams.toast] ? (
+        <AutoToast mensaje={TOAST_MENSAJES[searchParams.toast]} />
+      ) : null}
     </div>
   );
 }

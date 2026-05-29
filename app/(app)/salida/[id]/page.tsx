@@ -9,14 +9,44 @@ import {
 } from "@/lib/format";
 import BotonParticipar from "./BotonParticipar";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
+import HostPanel, { type Pendiente } from "./HostPanel";
 
 type Costo = { concepto: string; monto: number };
 
 type ConfirmadoRow = {
   user_id: string;
   profile:
-    | { nombre: string | null; foto_url: string | null }
-    | { nombre: string | null; foto_url: string | null }[]
+    | {
+        nombre: string | null;
+        foto_url: string | null;
+        reputacion_promedio: number | null;
+      }
+    | {
+        nombre: string | null;
+        foto_url: string | null;
+        reputacion_promedio: number | null;
+      }[]
+    | null;
+};
+
+type PendienteRow = {
+  id: string;
+  user_id: string;
+  profile:
+    | {
+        nombre: string | null;
+        foto_url: string | null;
+        bio: string | null;
+        instagram_handle: string | null;
+        reputacion_promedio: number | null;
+      }
+    | {
+        nombre: string | null;
+        foto_url: string | null;
+        bio: string | null;
+        instagram_handle: string | null;
+        reputacion_promedio: number | null;
+      }[]
     | null;
 };
 
@@ -30,7 +60,7 @@ function initials(name?: string | null) {
     .toUpperCase();
 }
 
-function unwrapProfile(p: ConfirmadoRow["profile"]) {
+function unwrap<T>(p: T | T[] | null): T | null {
   if (!p) return null;
   return Array.isArray(p) ? p[0] ?? null : p;
 }
@@ -42,8 +72,6 @@ export default async function SalidaDetallePage({
   params: { id: string };
   searchParams: { nueva?: string };
 }) {
-  // El SSR client usa anon cuando no hay sesión (RLS aplica). Si hay sesión,
-  // usa authenticated. NO es service_role.
   const supabase = createClient();
 
   const [{ data: salida }, { data: userData }] = await Promise.all([
@@ -62,21 +90,22 @@ export default async function SalidaDetallePage({
   }
 
   const user = userData.user ?? null;
+  const isHost = user?.id === salida!.host_id;
 
-  // Host (columnas públicas).
+  // Host del header / card.
   const { data: host } = await supabase
     .from("profiles")
     .select("nombre, foto_url, reputacion_promedio, verificado")
     .eq("id", salida!.host_id)
     .maybeSingle();
 
-  // Estado de participación del usuario actual (si hay sesión).
+  // Estado de participación del usuario actual.
   let estadoParticipacion:
     | "pendiente"
     | "aceptado"
     | "rechazado"
     | null = null;
-  if (user && user.id !== salida!.host_id) {
+  if (user && !isHost) {
     const { data: miPart } = await supabase
       .from("participaciones")
       .select("estado")
@@ -86,17 +115,55 @@ export default async function SalidaDetallePage({
     estadoParticipacion = (miPart?.estado as typeof estadoParticipacion) ?? null;
   }
 
-  // Confirmados (estado = aceptado).
+  // Confirmados (con reputación para mostrar la lista al host también).
   const { data: confirmadosData } = await supabase
     .from("participaciones")
     .select(
-      "user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url)",
+      "user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, reputacion_promedio)",
     )
     .eq("salida_id", salida!.id)
     .eq("estado", "aceptado")
     .order("created_at", { ascending: true });
 
-  const confirmados = (confirmadosData ?? []) as unknown as ConfirmadoRow[];
+  const confirmadosRows = (confirmadosData ?? []) as unknown as ConfirmadoRow[];
+  const confirmados = confirmadosRows.map((r) => {
+    const p = unwrap(r.profile);
+    return {
+      user_id: r.user_id,
+      nombre: p?.nombre ?? null,
+      foto_url: p?.foto_url ?? null,
+      reputacion_promedio: p?.reputacion_promedio ?? null,
+    };
+  });
+
+  // Solicitudes pendientes (solo cargamos si sos host — la RLS igual te bloquea si no).
+  let pendientes: Pendiente[] = [];
+  if (isHost) {
+    const { data: pendData } = await supabase
+      .from("participaciones")
+      .select(
+        "id, user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, bio, instagram_handle, reputacion_promedio)",
+      )
+      .eq("salida_id", salida!.id)
+      .eq("estado", "pendiente")
+      .order("created_at", { ascending: true });
+
+    const rows = (pendData ?? []) as unknown as PendienteRow[];
+    pendientes = rows.map((r) => {
+      const p = unwrap(r.profile);
+      return {
+        id: r.id,
+        user_id: r.user_id,
+        profile: {
+          nombre: p?.nombre ?? null,
+          foto_url: p?.foto_url ?? null,
+          bio: p?.bio ?? null,
+          instagram_handle: p?.instagram_handle ?? null,
+          reputacion_promedio: p?.reputacion_promedio ?? null,
+        },
+      };
+    });
+  }
 
   const costos = Array.isArray(salida!.costos)
     ? (salida!.costos as Costo[])
@@ -114,7 +181,6 @@ export default async function SalidaDetallePage({
     0,
     salida!.cupos_total - (salida!.cupos_ocupados ?? 0),
   );
-  const isHost = user?.id === salida!.host_id;
   const cuposCompletos = cuposLibres === 0 || salida!.estado !== "abierta";
   const recienCreada = searchParams.nueva === "1";
 
@@ -222,6 +288,11 @@ export default async function SalidaDetallePage({
             className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-noche px-6 text-base font-semibold text-crema active:scale-[0.98]"
           >
             Gestionar solicitudes
+            {pendientes.length > 0 ? (
+              <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-arena px-1.5 text-[11px] font-bold text-crema">
+                {pendientes.length}
+              </span>
+            ) : null}
           </a>
         ) : cuposCompletos && !estadoParticipacion ? (
           <button
@@ -321,66 +392,65 @@ export default async function SalidaDetallePage({
         ) : null}
       </section>
 
-      {/* Participantes confirmados */}
-      <section className="mt-6">
-        <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-          Tripulación confirmada
-        </div>
-        {confirmados.length === 0 ? (
-          <p className="mt-2 text-sm text-tinta/50">
-            Todavía no hay confirmados.
-          </p>
-        ) : (
-          <div className="mt-3 flex items-center gap-2">
-            <div className="flex -space-x-2">
-              {confirmadosVisible.map((c) => {
-                const p = unwrapProfile(c.profile);
-                return (
+      {/* Stack público de avatares — solo para no-host (host ve lista rica abajo) */}
+      {!isHost ? (
+        <section className="mt-6">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Tripulación confirmada
+          </div>
+          {confirmados.length === 0 ? (
+            <p className="mt-2 text-sm text-tinta/50">
+              Todavía no hay confirmados.
+            </p>
+          ) : (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {confirmadosVisible.map((c) => (
                   <div
                     key={c.user_id}
-                    title={p?.nombre ?? ""}
+                    title={c.nombre ?? ""}
                     className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border-2 border-crema bg-rio text-xs font-bold text-crema"
                   >
-                    {p?.foto_url ? (
+                    {c.foto_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={p.foto_url}
-                        alt={p.nombre ?? "Participante"}
+                        src={c.foto_url}
+                        alt={c.nombre ?? "Participante"}
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span>{initials(p?.nombre)}</span>
+                      <span>{initials(c.nombre)}</span>
                     )}
                   </div>
-                );
-              })}
-              {confirmadosExtra > 0 ? (
-                <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-crema bg-tinta/10 text-xs font-bold text-tinta/70">
-                  +{confirmadosExtra}
-                </div>
-              ) : null}
+                ))}
+                {confirmadosExtra > 0 ? (
+                  <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-crema bg-tinta/10 text-xs font-bold text-tinta/70">
+                    +{confirmadosExtra}
+                  </div>
+                ) : null}
+              </div>
+              <span className="text-sm text-tinta/60">
+                {confirmados.length}{" "}
+                {confirmados.length === 1 ? "confirmado" : "confirmados"}
+              </span>
             </div>
-            <span className="text-sm text-tinta/60">
-              {confirmados.length}{" "}
-              {confirmados.length === 1 ? "confirmado" : "confirmados"}
-            </span>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      ) : null}
 
-      {/* Compartir */}
+      {/* Compartir (siempre visible) */}
       <BotonesCompartir {...shareProps} />
 
-      {/* Sección de gestión (placeholder para el host) */}
+      {/* Panel del host */}
       {isHost ? (
-        <section id="solicitudes" className="mt-8 scroll-mt-20">
-          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-            Solicitudes
-          </div>
-          <div className="mt-2 rounded-2xl border border-dashed border-tinta/15 bg-white/50 p-6 text-center text-sm text-tinta/60">
-            Próximamente vas a poder aceptar y rechazar solicitudes desde acá.
-          </div>
-        </section>
+        <HostPanel
+          salidaId={salida!.id}
+          titulo={salida!.titulo}
+          fechaTexto={formatFechaCorta(salida!.fecha_hora)}
+          punto={salida!.punto_encuentro_texto}
+          pendientes={pendientes}
+          confirmados={confirmados}
+        />
       ) : null}
     </div>
   );
