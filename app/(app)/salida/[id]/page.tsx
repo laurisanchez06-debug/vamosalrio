@@ -1,35 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-
-const TRANSPORTE_LABEL: Record<string, string> = {
-  lancha_publica: "Lancha pública",
-  lancha_privada: "Lancha privada",
-  lancha_taxi: "Lancha taxi",
-  kayak: "Kayak",
-  a_pie: "A pie",
-  otro: "Otro",
-};
-
-function formatPesos(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function formatFecha(iso: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
-}
+import {
+  TRANSPORTE_LABEL,
+  formatFechaLarga,
+  formatPesos,
+} from "@/lib/format";
 
 type Costo = { concepto: string; monto: number };
+
+function initials(name?: string | null) {
+  return (name ?? "?")
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default async function SalidaDetallePage({
   params,
@@ -52,9 +40,11 @@ export default async function SalidaDetallePage({
     notFound();
   }
 
+  // Solo columnas públicas del host. La policy de anon en profiles igual no
+  // expone más que esto al código.
   const { data: host } = await supabase
     .from("profiles")
-    .select("nombre, foto_url, zona_texto, reputacion_promedio")
+    .select("nombre, foto_url, reputacion_promedio, verificado")
     .eq("id", salida!.host_id)
     .maybeSingle();
 
@@ -103,27 +93,32 @@ export default async function SalidaDetallePage({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span>
-                {(host.nombre ?? "?")
-                  .split(" ")
-                  .map((p: string) => p[0])
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase()}
-              </span>
+              <span>{initials(host.nombre)}</span>
             )}
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-xs uppercase tracking-wide text-tinta/40">
               Host
             </div>
-            <div className="text-sm font-semibold text-noche">
-              {host.nombre ?? "Anónimo"}
+            <div className="flex items-center gap-1 text-sm font-semibold text-noche">
+              <span className="truncate">{host.nombre ?? "Anónimo"}</span>
+              {host.verificado ? (
+                <span
+                  aria-label="Verificado"
+                  className="grid h-4 w-4 place-items-center rounded-full bg-rio text-[10px] font-bold text-crema"
+                >
+                  ✓
+                </span>
+              ) : null}
             </div>
-            {host.zona_texto ? (
-              <div className="text-xs text-tinta/50">{host.zona_texto}</div>
-            ) : null}
+            <div className="flex items-center gap-1 text-xs text-tinta/50">
+              <span aria-hidden className="text-arena">
+                ★
+              </span>
+              <span>
+                {Number(host.reputacion_promedio ?? 0).toFixed(1)}
+              </span>
+            </div>
           </div>
           <span aria-hidden className="text-tinta/40">
             ›
@@ -137,7 +132,7 @@ export default async function SalidaDetallePage({
             Cuándo
           </div>
           <div className="mt-1 text-base font-semibold text-noche">
-            {formatFecha(salida!.fecha_hora)}
+            {formatFechaLarga(salida!.fecha_hora)}
           </div>
         </div>
 
