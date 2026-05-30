@@ -17,6 +17,7 @@ async function getSessionUserOrError() {
 
 export async function solicitarParticipacionAction(
   salidaId: string,
+  mensaje?: string,
 ): Promise<Result> {
   const session = await getSessionUserOrError();
   if (!session.user) return { error: session.error! };
@@ -33,10 +34,13 @@ export async function solicitarParticipacionAction(
   if (salida.estado !== "abierta") return { error: "La salida ya no está abierta." };
   if ((salida.cupos_ocupados ?? 0) >= salida.cupos_total) return { error: "No quedan cupos." };
 
+  const mensajeLimpio = (mensaje ?? "").trim().slice(0, 300);
+
   const { error } = await supabase.from("participaciones").insert({
     salida_id: salidaId,
     user_id: user.id,
     estado: "pendiente",
+    mensaje: mensajeLimpio || null,
   });
 
   if (error) {

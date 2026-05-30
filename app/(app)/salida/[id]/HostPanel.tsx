@@ -27,6 +27,7 @@ type ConfirmadoMin = {
 export type Pendiente = {
   id: string;
   user_id: string;
+  mensaje: string | null;
   profile: Perfil;
 };
 
@@ -224,6 +225,16 @@ export default function HostPanel({
                       ) : null}
                     </div>
                   </div>
+
+                  {p.mensaje ? (
+                    <blockquote className="mt-3 rounded-xl border-l-4 border-rio/40 bg-rio/5 px-3 py-2 text-sm italic leading-relaxed text-tinta/80">
+                      “{p.mensaje}”
+                    </blockquote>
+                  ) : (
+                    <p className="mt-3 text-xs italic text-tinta/40">
+                      Sin presentación
+                    </p>
+                  )}
 
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button

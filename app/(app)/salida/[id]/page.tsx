@@ -37,6 +37,7 @@ type ConfirmadoRow = {
 type PendienteRow = {
   id: string;
   user_id: string;
+  mensaje: string | null;
   profile:
     | {
         nombre: string | null;
@@ -147,7 +148,7 @@ export default async function SalidaDetallePage({
     const { data: pendData } = await supabase
       .from("participaciones")
       .select(
-        "id, user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, bio, instagram_handle, reputacion_promedio)",
+        "id, user_id, mensaje, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, bio, instagram_handle, reputacion_promedio)",
       )
       .eq("salida_id", salida!.id)
       .eq("estado", "pendiente")
@@ -159,6 +160,7 @@ export default async function SalidaDetallePage({
       return {
         id: r.id,
         user_id: r.user_id,
+        mensaje: r.mensaje,
         profile: {
           nombre: p?.nombre ?? null,
           foto_url: p?.foto_url ?? null,

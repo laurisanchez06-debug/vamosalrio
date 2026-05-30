@@ -3,6 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import AuthCard from "@/components/AuthCard";
 import { completarPerfilAction } from "./actions";
 
+const INTERESES = [
+  "Lancha / paseo",
+  "Pesca",
+  "Kayak / remo",
+  "Playa / isla",
+  "Asado en isla",
+  "Deportes náuticos",
+];
+
 export default async function CompletarPerfilPage({
   searchParams,
 }: {
@@ -19,9 +28,12 @@ export default async function CompletarPerfilPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nombre, bio, instagram_handle, foto_url")
+    .select("nombre, bio, instagram_handle, foto_url, intereses")
     .eq("id", user!.id)
     .maybeSingle();
+
+  const intereses =
+    ((profile as { intereses?: string[] | null } | null)?.intereses) ?? [];
 
   return (
     <AuthCard
@@ -80,17 +92,40 @@ export default async function CompletarPerfilPage({
             htmlFor="bio"
             className="mb-1 block text-sm font-medium text-noche"
           >
-            Bio
+            Presentate: ¿quién sos y qué onda tus salidas?
           </label>
           <textarea
             id="bio"
             name="bio"
-            rows={3}
+            rows={4}
             maxLength={200}
             defaultValue={profile?.bio ?? ""}
-            placeholder="Una línea sobre vos (max 200)"
+            placeholder="Ej: Fanático del río y el mate. Suelo armar asados en la isla los findes."
             className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
           />
+        </div>
+
+        <div>
+          <span className="mb-1 block text-sm font-medium text-noche">
+            ¿Qué te gusta hacer en el río?
+          </span>
+          <p className="mb-2 text-xs text-tinta/50">Tocá los que te representen.</p>
+          <div className="flex flex-wrap gap-2">
+            {INTERESES.map((interes) => (
+              <label key={interes} className="cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="intereses"
+                  value={interes}
+                  defaultChecked={intereses.includes(interes)}
+                  className="peer sr-only"
+                />
+                <span className="inline-flex items-center rounded-full border border-tinta/15 bg-white px-3 py-1.5 text-sm font-medium text-tinta/70 transition peer-checked:border-rio peer-checked:bg-rio peer-checked:text-crema">
+                  {interes}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div>

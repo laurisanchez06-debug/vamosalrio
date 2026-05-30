@@ -35,6 +35,10 @@ export async function completarPerfilAction(formData: FormData) {
   const nombre = clean(formData.get("nombre"));
   const bio = clean(formData.get("bio")).slice(0, 200);
   const instagram = normalizeInstagram(clean(formData.get("instagram_handle")));
+  const intereses = formData
+    .getAll("intereses")
+    .map((v) => String(v))
+    .filter(Boolean);
   const foto = formData.get("foto");
   const redirectTo = safeRedirect(formData.get("redirect"));
   const qs = redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : "";
@@ -79,6 +83,7 @@ export async function completarPerfilAction(formData: FormData) {
       nombre,
       bio: bio || null,
       instagram_handle: instagram,
+      intereses,
       ...(fotoUrl ? { foto_url: fotoUrl } : {}),
     })
     .eq("id", user!.id);
