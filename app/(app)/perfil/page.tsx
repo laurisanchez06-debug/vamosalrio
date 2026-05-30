@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import CapitanBadge from "@/components/CapitanBadge";
+import ReferenciasRecibidas from "@/components/ReferenciasRecibidas";
 import { signOutAction } from "./actions";
 
 export default async function PerfilPage() {
@@ -16,7 +18,7 @@ export default async function PerfilPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas",
+      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan",
     )
     .eq("id", user!.id)
     .maybeSingle();
@@ -45,9 +47,12 @@ export default async function PerfilPage() {
           )}
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-noche">
-            {profile?.nombre ?? "Tu perfil"}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-noche">
+              {profile?.nombre ?? "Tu perfil"}
+            </h1>
+            {profile?.es_capitan ? <CapitanBadge /> : null}
+          </div>
           {profile?.instagram_handle ? (
             <a
               href={`https://instagram.com/${profile.instagram_handle}`}
@@ -95,6 +100,8 @@ export default async function PerfilPage() {
           </div>
         </div>
       </section>
+
+      <ReferenciasRecibidas userId={user!.id} />
 
       <section className="mt-8 space-y-3">
         <Link

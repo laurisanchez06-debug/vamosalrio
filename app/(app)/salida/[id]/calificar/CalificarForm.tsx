@@ -168,7 +168,7 @@ export default function CalificarForm({
                 onChange={(e) => setComentario(persona.id, e.target.value)}
                 rows={2}
                 maxLength={200}
-                placeholder="Comentario (opcional)"
+                placeholder="Dejá una referencia (opcional)"
                 className="block w-full resize-none rounded-xl border border-tinta/15 bg-crema px-3 py-2 text-sm outline-none ring-rio/40 focus:border-rio focus:ring-2"
               />
               <div className="mt-1 text-right text-[10px] text-tinta/40">
