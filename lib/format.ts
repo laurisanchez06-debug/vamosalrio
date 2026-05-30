@@ -63,3 +63,16 @@ export const TRANSPORTE_LABEL: Record<string, string> = {
   a_pie: "A pie",
   otro: "Otro",
 };
+
+export const CATEGORIAS: { value: string; label: string }[] = [
+  { value: "lancha_paseo", label: "Lancha / paseo" },
+  { value: "pesca", label: "Pesca" },
+  { value: "kayak_remo", label: "Kayak / remo" },
+  { value: "playa_isla", label: "Playa / isla" },
+  { value: "asado_isla", label: "Asado en isla" },
+  { value: "deportes_nauticos", label: "Deportes náuticos" },
+];
+
+export const CATEGORIA_LABEL: Record<string, string> = Object.fromEntries(
+  CATEGORIAS.map((c) => [c.value, c.label]),
+);

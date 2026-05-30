@@ -32,6 +32,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const fechaHoraISO = String(formData.get("fecha_hora_iso") ?? "").trim();
   const cuposRaw = Number(formData.get("cupos_total"));
   const transporte = String(formData.get("transporte") ?? "").trim();
+  const categoria = String(formData.get("categoria") ?? "").trim();
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
   const costosJson = String(formData.get("costos_json") ?? "[]");
 
@@ -76,6 +77,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       fecha_hora: fecha.toISOString(),
       cupos_total: cuposRaw,
       transporte,
+      categoria: categoria || null,
       costos,
       que_llevar: queLlevar || null,
     })

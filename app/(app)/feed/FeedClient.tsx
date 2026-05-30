@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
+  CATEGORIAS,
+  CATEGORIA_LABEL,
   TRANSPORTE_LABEL,
   formatFechaCorta,
   formatPesos,
@@ -24,14 +26,30 @@ export type SalidaFeed = {
   cupos_total: number;
   cupos_ocupados: number;
   transporte: string;
+  categoria: string | null;
   costos: Costo[] | null;
   estado: string;
   host_id: string;
   host: Host | Host[] | null;
 };
 
-type FechaFilter = "todas" | "hoy" | "semana";
+type FechaFilter = "todas" | "hoy" | "finde" | "semana" | "mes";
 type TransporteFilter = "todas" | "lancha" | "kayak" | "a_pie";
+
+const FECHAS: { value: FechaFilter; label: string }[] = [
+  { value: "todas", label: "Todas" },
+  { value: "hoy", label: "Hoy" },
+  { value: "finde", label: "Este finde" },
+  { value: "semana", label: "Esta semana" },
+  { value: "mes", label: "Este mes" },
+];
+
+const TRANSPORTES: { value: TransporteFilter; label: string }[] = [
+  { value: "todas", label: "Todas" },
+  { value: "lancha", label: "Lancha" },
+  { value: "kayak", label: "Kayak" },
+  { value: "a_pie", label: "A pie" },
+];
 
 function getHost(s: SalidaFeed): Host | null {
   if (!s.host) return null;
@@ -39,29 +57,48 @@ function getHost(s: SalidaFeed): Host | null {
   return s.host;
 }
 
-function isHoy(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
 }
 
-function isEstaSemana(iso: string) {
-  const d = new Date(iso);
+function matchFecha(iso: string, filter: FechaFilter): boolean {
+  if (filter === "todas") return true;
+  const date = new Date(iso);
   const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 7);
-  return d >= start && d < end;
+  const today = startOfDay(now);
+  const dowMon = (now.getDay() + 6) % 7; // 0 = lunes … 6 = domingo
+
+  if (filter === "hoy") {
+    const manana = new Date(today);
+    manana.setDate(today.getDate() + 1);
+    return date >= today && date < manana;
+  }
+  if (filter === "finde") {
+    const lunes = new Date(today);
+    lunes.setDate(today.getDate() - dowMon);
+    const sabado = new Date(lunes);
+    sabado.setDate(lunes.getDate() + 5);
+    const proxLunes = new Date(lunes);
+    proxLunes.setDate(lunes.getDate() + 7);
+    return date >= sabado && date < proxLunes;
+  }
+  if (filter === "semana") {
+    const proxLunes = new Date(today);
+    proxLunes.setDate(today.getDate() - dowMon + 7);
+    return date >= today && date < proxLunes;
+  }
+  if (filter === "mes") {
+    const proxMes = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    return date >= today && date < proxMes;
+  }
+  return true;
 }
 
 function transporteMatch(t: string, filter: TransporteFilter): boolean {
   if (filter === "todas") return true;
-  if (filter === "lancha") return t.startsWith("lancha");
+  if (filter === "lancha") return t?.startsWith("lancha");
   return t === filter;
 }
 
@@ -78,15 +115,25 @@ function initials(name?: string | null) {
 export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
   const [fecha, setFecha] = useState<FechaFilter>("todas");
   const [transporte, setTransporte] = useState<TransporteFilter>("todas");
+  const [categorias, setCategorias] = useState<string[]>([]);
+
+  function toggleCategoria(value: string) {
+    setCategorias((prev) =>
+      prev.includes(value)
+        ? prev.filter((v) => v !== value)
+        : [...prev, value],
+    );
+  }
 
   const filtradas = useMemo(() => {
     return salidas.filter((s) => {
-      if (fecha === "hoy" && !isHoy(s.fecha_hora)) return false;
-      if (fecha === "semana" && !isEstaSemana(s.fecha_hora)) return false;
+      if (!matchFecha(s.fecha_hora, fecha)) return false;
       if (!transporteMatch(s.transporte, transporte)) return false;
+      if (categorias.length > 0 && !categorias.includes(s.categoria ?? ""))
+        return false;
       return true;
     });
-  }, [salidas, fecha, transporte]);
+  }, [salidas, fecha, transporte, categorias]);
 
   if (salidas.length === 0) {
     return (
@@ -112,19 +159,51 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
 
   return (
     <div className="mt-6">
-      <Filtros
-        fecha={fecha}
-        setFecha={setFecha}
-        transporte={transporte}
-        setTransporte={setTransporte}
-      />
+      <div className="-mx-6 space-y-2 px-6">
+        <ChipGroup
+          label="Cuándo"
+          value={fecha}
+          onChange={(v) => setFecha(v as FechaFilter)}
+          options={FECHAS}
+        />
+        <ChipGroup
+          label="Cómo"
+          value={transporte}
+          onChange={(v) => setTransporte(v as TransporteFilter)}
+          options={TRANSPORTES}
+        />
+        <MultiChipGroup
+          label="Tipo"
+          selected={categorias}
+          onToggle={toggleCategoria}
+          onClear={() => setCategorias([])}
+          options={CATEGORIAS}
+        />
+      </div>
+
+      <p className="mt-5 text-sm font-medium text-tinta/60">
+        {filtradas.length} {filtradas.length === 1 ? "salida" : "salidas"}
+      </p>
 
       {filtradas.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-6 text-center text-sm text-tinta/60">
-          Ninguna salida coincide con esos filtros.
-        </p>
+        <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
+          <p className="text-sm text-tinta/60">
+            Ninguna salida coincide con esos filtros.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setFecha("todas");
+              setTransporte("todas");
+              setCategorias([]);
+            }}
+            className="mt-3 text-sm font-semibold text-rio"
+          >
+            Limpiar filtros
+          </button>
+        </div>
       ) : (
-        <ul className="mt-5 space-y-3">
+        <ul className="mt-3 space-y-3">
           {filtradas.map((s) => (
             <li key={s.id}>
               <SalidaCard salida={s} />
@@ -132,44 +211,6 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-function Filtros({
-  fecha,
-  setFecha,
-  transporte,
-  setTransporte,
-}: {
-  fecha: FechaFilter;
-  setFecha: (v: FechaFilter) => void;
-  transporte: TransporteFilter;
-  setTransporte: (v: TransporteFilter) => void;
-}) {
-  return (
-    <div className="-mx-6 space-y-2 overflow-x-auto px-6">
-      <ChipGroup
-        label="Cuándo"
-        value={fecha}
-        onChange={(v) => setFecha(v as FechaFilter)}
-        options={[
-          { value: "todas", label: "Todas" },
-          { value: "hoy", label: "Hoy" },
-          { value: "semana", label: "Esta semana" },
-        ]}
-      />
-      <ChipGroup
-        label="Cómo"
-        value={transporte}
-        onChange={(v) => setTransporte(v as TransporteFilter)}
-        options={[
-          { value: "todas", label: "Todas" },
-          { value: "lancha", label: "Lancha" },
-          { value: "kayak", label: "Kayak" },
-          { value: "a_pie", label: "A pie" },
-        ]}
-      />
     </div>
   );
 }
@@ -187,7 +228,7 @@ function ChipGroup({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="shrink-0 text-[11px] uppercase tracking-wide text-tinta/40">
+      <span className="w-14 shrink-0 text-[11px] uppercase tracking-wide text-tinta/40">
         {label}
       </span>
       <div className="flex flex-1 flex-wrap gap-2">
@@ -198,6 +239,60 @@ function ChipGroup({
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                active
+                  ? "border-rio bg-rio text-crema"
+                  : "border-tinta/15 bg-white text-tinta/70"
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MultiChipGroup({
+  label,
+  selected,
+  onToggle,
+  onClear,
+  options,
+}: {
+  label: string;
+  selected: string[];
+  onToggle: (v: string) => void;
+  onClear: () => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-1.5 w-14 shrink-0 text-[11px] uppercase tracking-wide text-tinta/40">
+        {label}
+      </span>
+      <div className="flex flex-1 flex-wrap gap-2">
+        {selected.length > 0 ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-full border border-tinta/15 bg-white px-3 py-1.5 text-xs font-medium text-tinta/50"
+          >
+            Todas
+          </button>
+        ) : (
+          <span className="rounded-full border border-rio bg-rio px-3 py-1.5 text-xs font-medium text-crema">
+            Todas
+          </span>
+        )}
+        {options.map((opt) => {
+          const active = selected.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onToggle(opt.value)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                 active
                   ? "border-rio bg-rio text-crema"
@@ -246,6 +341,9 @@ function SalidaCard({ salida }: { salida: SalidaFeed }) {
   }
 
   const reputacion = Number(host?.reputacion_promedio ?? 0);
+  const categoriaLabel = salida.categoria
+    ? CATEGORIA_LABEL[salida.categoria] ?? salida.categoria
+    : null;
 
   return (
     <Link
@@ -283,7 +381,13 @@ function SalidaCard({ salida }: { salida: SalidaFeed }) {
         </span>
       </div>
 
-      <h3 className="mt-3 text-lg font-semibold leading-tight text-noche">
+      {categoriaLabel ? (
+        <span className="mt-3 inline-flex items-center rounded-full bg-rio/10 px-2.5 py-0.5 text-[11px] font-semibold text-rio">
+          {categoriaLabel}
+        </span>
+      ) : null}
+
+      <h3 className="mt-2 text-lg font-semibold leading-tight text-noche">
         {salida.titulo}
       </h3>
 
@@ -300,9 +404,7 @@ function SalidaCard({ salida }: { salida: SalidaFeed }) {
         ) : null}
         <div className="flex items-center gap-2">
           <span aria-hidden>🛶</span>
-          <dd>
-            {TRANSPORTE_LABEL[salida.transporte] ?? salida.transporte}
-          </dd>
+          <dd>{TRANSPORTE_LABEL[salida.transporte] ?? salida.transporte}</dd>
         </div>
       </dl>
 

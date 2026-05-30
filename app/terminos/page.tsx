@@ -95,8 +95,8 @@ export default function TerminosPage() {
 
       <p className="text-sm text-tinta/55">
         Dudas o reclamos:{" "}
-        <a href="mailto:hola@vamosalrio.com.ar" className="font-medium text-rio">
-          hola@vamosalrio.com.ar
+        <a href="mailto:comercial@kapplasrl.com" className="font-medium text-rio">
+          comercial@kapplasrl.com
         </a>
         .
       </p>

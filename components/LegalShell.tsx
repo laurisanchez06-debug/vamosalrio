@@ -41,7 +41,7 @@ export default function LegalShell({ titulo, actualizado, borrador, children }: 
             <Link href="/privacidad" className="hover:text-rio">
               Privacidad
             </Link>
-            <a href="mailto:hola@vamosalrio.com.ar" className="hover:text-rio">
+            <a href="mailto:comercial@kapplasrl.com" className="hover:text-rio">
               Contacto
             </a>
           </nav>

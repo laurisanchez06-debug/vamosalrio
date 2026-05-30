@@ -77,8 +77,8 @@ export default function PrivacidadPage() {
         <p>
           Podés acceder a tus datos, corregirlos o pedir que eliminemos tu cuenta
           escribiéndonos a{" "}
-          <a href="mailto:hola@vamosalrio.com.ar" className="font-medium text-rio">
-            hola@vamosalrio.com.ar
+          <a href="mailto:comercial@kapplasrl.com" className="font-medium text-rio">
+            comercial@kapplasrl.com
           </a>
           .
         </p>

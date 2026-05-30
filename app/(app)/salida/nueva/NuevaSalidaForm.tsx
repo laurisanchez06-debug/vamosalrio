@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { CATEGORIAS } from "@/lib/format";
 import { createSalidaAction } from "./actions";
 
 type CostoRow = { id: string; concepto: string; monto: string };
@@ -38,6 +39,7 @@ export default function NuevaSalidaForm() {
   const [fechaHora, setFechaHora] = useState("");
   const [cupos, setCupos] = useState(4);
   const [transporte, setTransporte] = useState<string>("");
+  const [categoria, setCategoria] = useState<string>("");
   const [costos, setCostos] = useState<CostoRow[]>([]);
   const [queLlevar, setQueLlevar] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -262,6 +264,33 @@ export default function NuevaSalidaForm() {
           })}
         </div>
         <input type="hidden" name="transporte" value={transporte} />
+      </div>
+
+      {/* Tipo de salida */}
+      <div>
+        <span className="mb-2 block text-sm font-medium text-noche">
+          ¿Qué tipo de salida es?
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIAS.map((opt) => {
+            const active = categoria === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setCategoria(opt.value)}
+                className={`rounded-full border px-4 py-2 text-sm transition ${
+                  active
+                    ? "border-rio bg-rio text-crema"
+                    : "border-tinta/15 bg-white text-tinta/80"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+        <input type="hidden" name="categoria" value={categoria} />
       </div>
 
       {/* Costos compartidos */}

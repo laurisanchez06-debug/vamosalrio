@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
+  CATEGORIA_LABEL,
   TRANSPORTE_LABEL,
   formatFechaCorta,
   formatFechaLarga,
@@ -84,7 +85,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, fecha_hora, cupos_total, cupos_ocupados, transporte, costos, que_llevar, estado, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, fecha_hora, cupos_total, cupos_ocupados, transporte, categoria, costos, que_llevar, estado, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -240,9 +241,16 @@ export default async function SalidaDetallePage({
       ) : null}
 
       <header className="mt-6">
-        <span className="inline-flex items-center gap-2 rounded-full bg-arena/15 px-3 py-1 text-xs font-medium text-arena">
-          {salida!.estado === "abierta" ? "Abierta" : salida!.estado}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-arena/15 px-3 py-1 text-xs font-medium text-arena">
+            {salida!.estado === "abierta" ? "Abierta" : salida!.estado}
+          </span>
+          {salida!.categoria ? (
+            <span className="inline-flex items-center rounded-full bg-rio/10 px-3 py-1 text-xs font-medium text-rio">
+              {CATEGORIA_LABEL[salida!.categoria] ?? salida!.categoria}
+            </span>
+          ) : null}
+        </div>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-noche">
           {salida!.titulo}
         </h1>
