@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AutoToast from "@/components/AutoToast";
 import FeedClient, { type SalidaFeed } from "./FeedClient";
@@ -14,6 +15,12 @@ export default async function FeedPage({
   searchParams: { toast?: string };
 }) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(`/login?redirect=${encodeURIComponent("/feed")}`);
+  }
 
   const { data } = await supabase
     .from("salidas")
