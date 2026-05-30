@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { recalcularEsCapitan } from "@/lib/capitan";
 
 type Result = { ok: true } | { error: string };
 
@@ -147,6 +149,9 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
     .update({ estado: "finalizada" })
     .eq("id", salidaId);
   if (error) return { error: error.message };
+
+  // El host pudo alcanzar el criterio de Capitán al sumar una salida finalizada.
+  await recalcularEsCapitan(createAdminClient(), user.id);
 
   revalidatePath(`/salida/${salidaId}`);
   return { ok: true };

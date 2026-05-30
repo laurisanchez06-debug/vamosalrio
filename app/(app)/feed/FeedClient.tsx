@@ -9,11 +9,13 @@ import {
   formatFechaCorta,
   formatPesos,
 } from "@/lib/format";
+import CapitanBadge from "@/components/CapitanBadge";
 
 type Host = {
   nombre: string | null;
   foto_url: string | null;
   reputacion_promedio: number | null;
+  es_capitan: boolean | null;
 };
 
 type Costo = { concepto: string; monto: number };
@@ -484,8 +486,11 @@ function SalidaCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-noche">
-            {host?.nombre ?? "Anónimo"}
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-semibold text-noche">
+              {host?.nombre ?? "Anónimo"}
+            </span>
+            {host?.es_capitan ? <CapitanBadge /> : null}
           </div>
           <div className="flex items-center gap-1 text-xs text-tinta/50">
             <span aria-hidden className="text-arena">

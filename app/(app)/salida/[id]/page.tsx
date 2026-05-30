@@ -15,6 +15,7 @@ import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
 import AportesSection from "./AportesSection";
+import CapitanBadge from "@/components/CapitanBadge";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -116,7 +117,7 @@ export default async function SalidaDetallePage({
   // Host del header / card.
   const { data: host } = await supabase
     .from("profiles")
-    .select("nombre, foto_url, reputacion_promedio, verificado")
+    .select("nombre, foto_url, reputacion_promedio, verificado, es_capitan")
     .eq("id", salida!.host_id)
     .maybeSingle();
 
@@ -361,6 +362,7 @@ export default async function SalidaDetallePage({
                   ✓
                 </span>
               ) : null}
+              {host.es_capitan ? <CapitanBadge /> : null}
             </div>
             <div className="flex items-center gap-1 text-xs text-tinta/50">
               <span aria-hidden className="text-arena">

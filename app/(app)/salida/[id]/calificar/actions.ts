@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recalcularEsCapitan } from "@/lib/capitan";
 
 type Result = { error: string };
 
@@ -110,6 +111,8 @@ export async function calificarAction(
       .from("profiles")
       .update({ reputacion_promedio: promedio })
       .eq("id", toUserId);
+
+    await recalcularEsCapitan(admin, toUserId);
   }
 
   revalidatePath(`/salida/${salidaId}`);

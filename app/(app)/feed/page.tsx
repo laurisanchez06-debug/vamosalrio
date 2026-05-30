@@ -19,7 +19,7 @@ export default async function FeedPage({
     .from("salidas")
     .select(
       `id, titulo, fecha_hora, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, cupos_total, cupos_ocupados, transporte, categoria, costos, estado, host_id,
-       host:profiles!salidas_host_id_fkey (nombre, foto_url, reputacion_promedio)`,
+       host:profiles!salidas_host_id_fkey (nombre, foto_url, reputacion_promedio, es_capitan)`,
     )
     .eq("estado", "abierta")
     .order("fecha_hora", { ascending: true });
