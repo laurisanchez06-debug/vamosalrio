@@ -78,8 +78,16 @@ export default function RegistroPage({
           Crear cuenta
         </button>
 
-        <p className="text-center text-xs text-tinta/50">
-          Al continuar aceptás recibir los emails de la cuenta.
+        <p className="text-center text-xs leading-relaxed text-tinta/50">
+          Al crear cuenta aceptás los{" "}
+          <Link href="/terminos" className="font-medium text-rio">
+            Términos
+          </Link>{" "}
+          y la{" "}
+          <Link href="/privacidad" className="font-medium text-rio">
+            Política de Privacidad
+          </Link>
+          .
         </p>
       </form>
     </AuthCard>
