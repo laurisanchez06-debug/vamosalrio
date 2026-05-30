@@ -268,7 +268,7 @@ export async function cancelarSalidaAction(salidaId: string) {
 
   const { data: salida } = await supabase
     .from("salidas")
-    .select("host_id")
+    .select("host_id, titulo")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -287,6 +287,26 @@ export async function cancelarSalidaAction(salidaId: string) {
     redirect(
       `/salida/${salidaId}?error=${encodeURIComponent(error.message)}`,
     );
+  }
+
+  try {
+    const admin = createAdminClient();
+    const { data: aceptados } = await supabase
+      .from("participaciones")
+      .select("user_id")
+      .eq("salida_id", salidaId)
+      .eq("estado", "aceptado");
+    for (const a of aceptados ?? []) {
+      const email = await emailDe(admin, a.user_id);
+      if (email) {
+        await emailSalidaCancelada({
+          to: email,
+          titulo: salida.titulo ?? "la salida",
+        });
+      }
+    }
+  } catch {
+    // fire-and-forget
   }
 
   redirect("/feed?toast=salida-cancelada");
