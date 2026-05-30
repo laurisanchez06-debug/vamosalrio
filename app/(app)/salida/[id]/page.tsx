@@ -9,6 +9,7 @@ import {
   formatPesos,
 } from "@/lib/format";
 import AutoToast from "@/components/AutoToast";
+import MapView from "@/components/map/MapView";
 import BotonParticipar from "./BotonParticipar";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
@@ -85,7 +86,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, fecha_hora, cupos_total, cupos_ocupados, transporte, categoria, costos, que_llevar, estado, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, transporte, categoria, costos, que_llevar, estado, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -388,14 +389,46 @@ export default async function SalidaDetallePage({
           </div>
         </div>
 
-        {salida!.punto_encuentro_texto ? (
+        {salida!.punto_encuentro_texto ||
+        (salida!.punto_encuentro_lat != null &&
+          salida!.punto_encuentro_lng != null) ? (
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <div className="text-[11px] uppercase tracking-wide text-tinta/40">
               Punto de encuentro
             </div>
-            <div className="mt-1 text-base font-semibold text-noche">
-              {salida!.punto_encuentro_texto}
-            </div>
+            {salida!.punto_encuentro_texto ? (
+              <div className="mt-1 text-base font-semibold text-noche">
+                {salida!.punto_encuentro_texto}
+              </div>
+            ) : null}
+            {salida!.punto_encuentro_lat != null &&
+            salida!.punto_encuentro_lng != null ? (
+              <div className="mt-3 space-y-3">
+                <MapView
+                  lat={salida!.punto_encuentro_lat}
+                  lng={salida!.punto_encuentro_lng}
+                />
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${salida!.punto_encuentro_lat},${salida!.punto_encuentro_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rio/30 bg-rio/5 px-4 text-sm font-semibold text-rio active:scale-[0.98]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                  </svg>
+                  Cómo llegar
+                </a>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

@@ -23,6 +23,8 @@ export type SalidaFeed = {
   titulo: string;
   fecha_hora: string;
   punto_encuentro_texto: string | null;
+  punto_encuentro_lat: number | null;
+  punto_encuentro_lng: number | null;
   cupos_total: number;
   cupos_ocupados: number;
   transporte: string;
@@ -35,6 +37,7 @@ export type SalidaFeed = {
 
 type FechaFilter = "todas" | "hoy" | "finde" | "semana" | "mes";
 type TransporteFilter = "todas" | "lancha" | "kayak" | "a_pie";
+type GeoState = "idle" | "loading" | "on" | "denied" | "unsupported";
 
 const FECHAS: { value: FechaFilter; label: string }[] = [
   { value: "todas", label: "Todas" },
@@ -102,6 +105,27 @@ function transporteMatch(t: string, filter: TransporteFilter): boolean {
   return t === filter;
 }
 
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function fmtKm(km: number): string {
+  if (km < 1) return `a ${Math.round(km * 1000)} m`;
+  return `a ${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+}
+
 function initials(name?: string | null) {
   return (name ?? "?")
     .split(" ")
@@ -116,12 +140,34 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
   const [fecha, setFecha] = useState<FechaFilter>("todas");
   const [transporte, setTransporte] = useState<TransporteFilter>("todas");
   const [categorias, setCategorias] = useState<string[]>([]);
+  const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [geo, setGeo] = useState<GeoState>("idle");
+  const [cerca, setCerca] = useState(false);
 
   function toggleCategoria(value: string) {
     setCategorias((prev) =>
-      prev.includes(value)
-        ? prev.filter((v) => v !== value)
-        : [...prev, value],
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  }
+
+  function pedirUbicacion() {
+    if (pos) {
+      setCerca((c) => !c);
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeo("unsupported");
+      return;
+    }
+    setGeo("loading");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setPos({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setCerca(true);
+        setGeo("on");
+      },
+      () => setGeo("denied"),
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   }
 
@@ -134,6 +180,30 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
       return true;
     });
   }, [salidas, fecha, transporte, categorias]);
+
+  const conDistancia = useMemo(() => {
+    const arr = filtradas.map((s) => ({
+      salida: s,
+      dist:
+        pos && s.punto_encuentro_lat != null && s.punto_encuentro_lng != null
+          ? haversineKm(
+              pos.lat,
+              pos.lng,
+              s.punto_encuentro_lat,
+              s.punto_encuentro_lng,
+            )
+          : null,
+    }));
+    if (cerca && pos) {
+      arr.sort((a, b) => {
+        if (a.dist == null && b.dist == null) return 0;
+        if (a.dist == null) return 1;
+        if (b.dist == null) return -1;
+        return a.dist - b.dist;
+      });
+    }
+    return arr;
+  }, [filtradas, pos, cerca]);
 
   if (salidas.length === 0) {
     return (
@@ -156,6 +226,8 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
       </div>
     );
   }
+
+  const cercaActivo = cerca && !!pos;
 
   return (
     <div className="mt-6">
@@ -181,11 +253,53 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
         />
       </div>
 
-      <p className="mt-5 text-sm font-medium text-tinta/60">
-        {filtradas.length} {filtradas.length === 1 ? "salida" : "salidas"}
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={pedirUbicacion}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+            cercaActivo
+              ? "border-rio bg-rio text-crema"
+              : "border-tinta/15 bg-white text-tinta/70"
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 22s8-4.5 8-11a8 8 0 1 0-16 0c0 6.5 8 11 8 11z" />
+            <circle cx="12" cy="11" r="2.5" />
+          </svg>
+          {geo === "loading"
+            ? "Buscando…"
+            : cercaActivo
+              ? "Cerca mío ✓"
+              : "Cerca mío"}
+        </button>
+        {geo === "denied" ? (
+          <span className="text-xs text-tinta/50">
+            No pudimos acceder a tu ubicación.
+          </span>
+        ) : null}
+        {geo === "unsupported" ? (
+          <span className="text-xs text-tinta/50">
+            Tu navegador no comparte ubicación.
+          </span>
+        ) : null}
+      </div>
+
+      <p className="mt-4 text-sm font-medium text-tinta/60">
+        {conDistancia.length}{" "}
+        {conDistancia.length === 1 ? "salida" : "salidas"}
+        {cercaActivo ? " · más cercanas primero" : ""}
       </p>
 
-      {filtradas.length === 0 ? (
+      {conDistancia.length === 0 ? (
         <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
           <p className="text-sm text-tinta/60">
             Ninguna salida coincide con esos filtros.
@@ -204,9 +318,9 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
         </div>
       ) : (
         <ul className="mt-3 space-y-3">
-          {filtradas.map((s) => (
-            <li key={s.id}>
-              <SalidaCard salida={s} />
+          {conDistancia.map(({ salida, dist }) => (
+            <li key={salida.id}>
+              <SalidaCard salida={salida} distanciaKm={dist} />
             </li>
           ))}
         </ul>
@@ -308,7 +422,13 @@ function MultiChipGroup({
   );
 }
 
-function SalidaCard({ salida }: { salida: SalidaFeed }) {
+function SalidaCard({
+  salida,
+  distanciaKm,
+}: {
+  salida: SalidaFeed;
+  distanciaKm: number | null;
+}) {
   const host = getHost(salida);
   const cuposLibres = Math.max(
     0,
@@ -381,10 +501,19 @@ function SalidaCard({ salida }: { salida: SalidaFeed }) {
         </span>
       </div>
 
-      {categoriaLabel ? (
-        <span className="mt-3 inline-flex items-center rounded-full bg-rio/10 px-2.5 py-0.5 text-[11px] font-semibold text-rio">
-          {categoriaLabel}
-        </span>
+      {categoriaLabel || distanciaKm != null ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {categoriaLabel ? (
+            <span className="inline-flex items-center rounded-full bg-rio/10 px-2.5 py-0.5 text-[11px] font-semibold text-rio">
+              {categoriaLabel}
+            </span>
+          ) : null}
+          {distanciaKm != null ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-noche/5 px-2.5 py-0.5 text-[11px] font-semibold text-noche">
+              📍 {fmtKm(distanciaKm)}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
       <h3 className="mt-2 text-lg font-semibold leading-tight text-noche">

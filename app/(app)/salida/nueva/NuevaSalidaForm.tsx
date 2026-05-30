@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { CATEGORIAS } from "@/lib/format";
+import MapPicker from "@/components/map/MapPicker";
 import { createSalidaAction } from "./actions";
 
 type CostoRow = { id: string; concepto: string; monto: string };
@@ -40,6 +41,8 @@ export default function NuevaSalidaForm() {
   const [cupos, setCupos] = useState(4);
   const [transporte, setTransporte] = useState<string>("");
   const [categoria, setCategoria] = useState<string>("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
   const [costos, setCostos] = useState<CostoRow[]>([]);
   const [queLlevar, setQueLlevar] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -184,6 +187,28 @@ export default function NuevaSalidaForm() {
           placeholder='Ej: "Bajada Sargento Cabral"'
           className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
         />
+
+        <div className="mt-3">
+          <p className="mb-2 text-xs text-tinta/50">
+            Tocá el mapa para marcar el punto exacto. Podés arrastrar el pin
+            para ajustarlo.
+          </p>
+          <MapPicker
+            lat={lat}
+            lng={lng}
+            onChange={(la, ln) => {
+              setLat(la);
+              setLng(ln);
+            }}
+          />
+          {lat != null && lng != null ? (
+            <p className="mt-2 text-xs text-tinta/50">
+              📍 Pin en {lat.toFixed(5)}, {lng.toFixed(5)}.
+            </p>
+          ) : null}
+          <input type="hidden" name="punto_encuentro_lat" value={lat ?? ""} />
+          <input type="hidden" name="punto_encuentro_lng" value={lng ?? ""} />
+        </div>
       </div>
 
       {/* Fecha + hora */}

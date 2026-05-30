@@ -34,6 +34,10 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const transporte = String(formData.get("transporte") ?? "").trim();
   const categoria = String(formData.get("categoria") ?? "").trim();
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
+  const latRaw = String(formData.get("punto_encuentro_lat") ?? "").trim();
+  const lngRaw = String(formData.get("punto_encuentro_lng") ?? "").trim();
+  const lat = latRaw ? Number(latRaw) : null;
+  const lng = lngRaw ? Number(lngRaw) : null;
   const costosJson = String(formData.get("costos_json") ?? "[]");
 
   if (!titulo) return { error: "El título es obligatorio." };
@@ -74,6 +78,8 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       titulo,
       descripcion: descripcion || null,
       punto_encuentro_texto: punto || null,
+      punto_encuentro_lat: lat != null && Number.isFinite(lat) ? lat : null,
+      punto_encuentro_lng: lng != null && Number.isFinite(lng) ? lng : null,
       fecha_hora: fecha.toISOString(),
       cupos_total: cuposRaw,
       transporte,
