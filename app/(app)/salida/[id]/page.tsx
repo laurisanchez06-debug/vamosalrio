@@ -14,12 +14,24 @@ import BotonParticipar from "./BotonParticipar";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
+import AportesSection from "./AportesSection";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
 };
 
 type Costo = { concepto: string; monto: number };
+
+type AporteRow = {
+  id: string;
+  nombre: string;
+  categoria: string;
+  asignado_a: string | null;
+  profile:
+    | { nombre: string | null; foto_url: string | null }
+    | { nombre: string | null; foto_url: string | null }[]
+    | null;
+};
 
 type ConfirmadoRow = {
   user_id: string;
@@ -247,6 +259,27 @@ export default async function SalidaDetallePage({
       .limit(200);
     chatMensajes = (msgs ?? []) as unknown as typeof chatMensajes;
   }
+
+  // Aportes — lista pública de "quién lleva qué".
+  const { data: aportesData } = await supabase
+    .from("aportes")
+    .select(
+      "id, nombre, categoria, asignado_a, profile:profiles!aportes_asignado_a_fkey (nombre, foto_url)",
+    )
+    .eq("salida_id", salida!.id)
+    .order("created_at", { ascending: true });
+
+  const aportes = ((aportesData ?? []) as unknown as AporteRow[]).map((a) => {
+    const p = unwrap(a.profile);
+    return {
+      id: a.id,
+      nombre: a.nombre,
+      categoria: a.categoria,
+      asignado_a: a.asignado_a,
+      asignadoNombre: p?.nombre ?? null,
+      asignadoFoto: p?.foto_url ?? null,
+    };
+  });
 
   const shareProps = {
     titulo: salida!.titulo,
@@ -576,6 +609,15 @@ export default async function SalidaDetallePage({
 
       {/* Compartir (siempre visible) */}
       <BotonesCompartir {...shareProps} />
+
+      {/* Aportes — lista pública; reclamar solo tripulación */}
+      <AportesSection
+        salidaId={salida!.id}
+        aportes={aportes}
+        isHost={isHost}
+        esMiembro={esMiembro}
+        currentUserId={user?.id ?? null}
+      />
 
       {/* Chat de la tripulación — solo host + aceptados */}
       {esMiembro ? (
