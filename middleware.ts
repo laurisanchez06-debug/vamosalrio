@@ -1,77 +1,50 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/registro", "/completar-perfil"]);
-
-function isPublicPath(pathname: string) {
-  if (PUBLIC_PATHS.has(pathname)) return true;
-  if (pathname.startsWith("/auth/")) return true;
-  // Detalle de salida es público para poder compartir por WhatsApp/Instagram.
-  // /salida/nueva queda protegida (crear salida requiere sesión).
-  if (pathname.startsWith("/salida/") && pathname !== "/salida/nueva") {
-    return true;
-  }
-  return false;
-}
-
+// Middleware Edge-safe y defensivo.
+// - NO importa nada del lado cliente/mapas ni APIs de Node (solo next/server
+//   y @supabase/ssr, ambos compatibles con el runtime Edge).
+// - Si faltan las envs de Supabase, no asume nada: deja pasar.
+// - TODA la lógica va en try/catch: ante cualquier error devuelve next(),
+//   así un fallo del middleware nunca voltea el sitio (las páginas igual
+//   validan auth del lado server).
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      return response;
+    }
+
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
-    },
-  );
+    });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Refresca la sesión si hace falta. No redirige: cada página corre su
+    // propio chequeo de auth del lado server.
+    await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-
-  if (isPublicPath(pathname)) {
     return response;
+  } catch {
+    return NextResponse.next();
   }
-
-  if (!user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nombre")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || profile.nombre == null || profile.nombre.trim() === "") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/completar-perfil";
-    return NextResponse.redirect(url);
-  }
-
-  return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.json|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Corre en todo salvo assets estáticos e íconos.
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
