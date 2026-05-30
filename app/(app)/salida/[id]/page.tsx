@@ -13,6 +13,7 @@ import MapView from "@/components/map/MapView";
 import BotonParticipar from "./BotonParticipar";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
+import ChatTripulacion from "./ChatTripulacion";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -212,6 +213,40 @@ export default async function SalidaDetallePage({
   }
   const puedeCalificar =
     usuarioParticipo && isFinalizadaOPasada && !isCancelada && !yaCalifico;
+
+  // Chat de la tripulación: visible solo para host + participantes aceptados.
+  const esMiembro = !!user && (isHost || estadoParticipacion === "aceptado");
+  const chatCerrado =
+    salida!.estado === "finalizada" || salida!.estado === "cancelada";
+  const miembrosChat = esMiembro
+    ? [
+        {
+          user_id: salida!.host_id,
+          nombre: host?.nombre ?? null,
+          foto_url: host?.foto_url ?? null,
+        },
+        ...confirmados.map((c) => ({
+          user_id: c.user_id,
+          nombre: c.nombre,
+          foto_url: c.foto_url,
+        })),
+      ]
+    : [];
+  let chatMensajes: {
+    id: string;
+    user_id: string;
+    texto: string;
+    created_at: string;
+  }[] = [];
+  if (esMiembro) {
+    const { data: msgs } = await supabase
+      .from("chat_mensajes")
+      .select("id, user_id, texto, created_at")
+      .eq("salida_id", salida!.id)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    chatMensajes = (msgs ?? []) as unknown as typeof chatMensajes;
+  }
 
   const shareProps = {
     titulo: salida!.titulo,
@@ -541,6 +576,17 @@ export default async function SalidaDetallePage({
 
       {/* Compartir (siempre visible) */}
       <BotonesCompartir {...shareProps} />
+
+      {/* Chat de la tripulación — solo host + aceptados */}
+      {esMiembro ? (
+        <ChatTripulacion
+          salidaId={salida!.id}
+          currentUserId={user!.id}
+          miembros={miembrosChat}
+          initialMensajes={chatMensajes}
+          cerrado={chatCerrado}
+        />
+      ) : null}
 
       {/* Panel del host */}
       {isHost ? (
