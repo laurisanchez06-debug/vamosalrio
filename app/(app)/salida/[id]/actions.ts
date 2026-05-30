@@ -5,6 +5,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularEsCapitan } from "@/lib/capitan";
+import {
+  emailNuevaSolicitud,
+  emailSolicitudAceptada,
+  emailSolicitudRechazada,
+  emailSalidaFinalizada,
+  emailSalidaCancelada,
+} from "@/lib/email";
 
 type Result = { ok: true } | { error: string };
 
@@ -17,6 +24,18 @@ async function getSessionUserOrError() {
   return { supabase, user, error: null } as const;
 }
 
+async function emailDe(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+): Promise<string | null> {
+  try {
+    const { data } = await admin.auth.admin.getUserById(userId);
+    return data?.user?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function solicitarParticipacionAction(
   salidaId: string,
   mensaje?: string,
@@ -27,7 +46,7 @@ export async function solicitarParticipacionAction(
 
   const { data: salida, error: salidaError } = await supabase
     .from("salidas")
-    .select("host_id, cupos_total, cupos_ocupados, estado")
+    .select("host_id, cupos_total, cupos_ocupados, estado, titulo")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -51,6 +70,25 @@ export async function solicitarParticipacionAction(
   }
 
   revalidatePath(`/salida/${salidaId}`);
+
+  try {
+    const admin = createAdminClient();
+    const [hostEmail, prof] = await Promise.all([
+      emailDe(admin, salida.host_id),
+      supabase.from("profiles").select("nombre").eq("id", user.id).maybeSingle(),
+    ]);
+    if (hostEmail) {
+      await emailNuevaSolicitud({
+        to: hostEmail,
+        solicitante: prof.data?.nombre ?? "Alguien",
+        titulo: salida.titulo ?? "tu salida",
+        salidaId,
+      });
+    }
+  } catch {
+    // fire-and-forget: el mail nunca rompe la solicitud
+  }
+
   return { ok: true };
 }
 
@@ -64,7 +102,7 @@ export async function aceptarSolicitudAction(
 
   const { data: salida } = await supabase
     .from("salidas")
-    .select("host_id, cupos_total, cupos_ocupados, estado")
+    .select("host_id, cupos_total, cupos_ocupados, estado, titulo")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -95,6 +133,27 @@ export async function aceptarSolicitudAction(
   if (sErr) return { error: sErr.message };
 
   revalidatePath(`/salida/${salidaId}`);
+
+  try {
+    const { data: part } = await supabase
+      .from("participaciones")
+      .select("user_id")
+      .eq("id", participacionId)
+      .maybeSingle();
+    if (part?.user_id) {
+      const email = await emailDe(createAdminClient(), part.user_id);
+      if (email) {
+        await emailSolicitudAceptada({
+          to: email,
+          titulo: salida.titulo ?? "la salida",
+          salidaId,
+        });
+      }
+    }
+  } catch {
+    // fire-and-forget
+  }
+
   return { ok: true };
 }
 
@@ -108,7 +167,7 @@ export async function rechazarSolicitudAction(
 
   const { data: salida } = await supabase
     .from("salidas")
-    .select("host_id")
+    .select("host_id, titulo")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -124,6 +183,26 @@ export async function rechazarSolicitudAction(
   if (error) return { error: error.message };
 
   revalidatePath(`/salida/${salidaId}`);
+
+  try {
+    const { data: part } = await supabase
+      .from("participaciones")
+      .select("user_id")
+      .eq("id", participacionId)
+      .maybeSingle();
+    if (part?.user_id) {
+      const email = await emailDe(createAdminClient(), part.user_id);
+      if (email) {
+        await emailSolicitudRechazada({
+          to: email,
+          titulo: salida.titulo ?? "la salida",
+        });
+      }
+    }
+  } catch {
+    // fire-and-forget
+  }
+
   return { ok: true };
 }
 
@@ -134,7 +213,7 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
 
   const { data: salida } = await supabase
     .from("salidas")
-    .select("host_id, estado")
+    .select("host_id, estado, titulo")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -151,7 +230,28 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
   if (error) return { error: error.message };
 
   // El host pudo alcanzar el criterio de Capitán al sumar una salida finalizada.
-  await recalcularEsCapitan(createAdminClient(), user.id);
+  const admin = createAdminClient();
+  await recalcularEsCapitan(admin, user.id);
+
+  try {
+    const { data: aceptados } = await supabase
+      .from("participaciones")
+      .select("user_id")
+      .eq("salida_id", salidaId)
+      .eq("estado", "aceptado");
+    for (const a of aceptados ?? []) {
+      const email = await emailDe(admin, a.user_id);
+      if (email) {
+        await emailSalidaFinalizada({
+          to: email,
+          titulo: salida.titulo ?? "tu salida",
+          salidaId,
+        });
+      }
+    }
+  } catch {
+    // fire-and-forget
+  }
 
   revalidatePath(`/salida/${salidaId}`);
   return { ok: true };
