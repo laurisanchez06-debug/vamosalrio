@@ -39,6 +39,7 @@ export async function signUpAction(formData: FormData) {
   } catch (err) {
     // No dejamos que una excepción (ej. URL/clave de Supabase mal cargada en
     // el deploy) se convierta en un 500 sin mensaje al crear cuenta.
+    console.error("[signUpAction] excepción al crear cuenta:", err);
     errorMessage =
       err instanceof Error
         ? err.message
