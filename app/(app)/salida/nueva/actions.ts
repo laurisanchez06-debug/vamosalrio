@@ -49,6 +49,20 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
     return { error: "Elegí cómo se llega." };
   }
 
+  // "Otro" exige especificar cuál (cierra el bug de "Otro sin completar").
+  // Como transporte tiene CHECK en la DB, guardamos el detalle prefijado en la
+  // descripción para no perder la info.
+  let descripcionFinal = descripcion;
+  if (transporte === "otro") {
+    const otroTxt = String(formData.get("transporte_otro") ?? "")
+      .trim()
+      .slice(0, 60);
+    if (!otroTxt) return { error: "Contanos cómo llegan al agua." };
+    descripcionFinal = [`Cómo llegamos: ${otroTxt}`, descripcion]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
   const fecha = new Date(fechaHoraISO);
   if (Number.isNaN(fecha.getTime())) {
     return { error: "La fecha no es válida." };
@@ -76,7 +90,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       tipo: "rio",
       estado: "abierta",
       titulo,
-      descripcion: descripcion || null,
+      descripcion: descripcionFinal || null,
       punto_encuentro_texto: punto || null,
       punto_encuentro_lat: lat != null && Number.isFinite(lat) ? lat : null,
       punto_encuentro_lng: lng != null && Number.isFinite(lng) ? lng : null,

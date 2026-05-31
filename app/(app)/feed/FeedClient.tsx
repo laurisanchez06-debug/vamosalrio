@@ -145,6 +145,11 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geo, setGeo] = useState<GeoState>("idle");
   const [cerca, setCerca] = useState(false);
+  const [showFiltros, setShowFiltros] = useState(false);
+
+  // Filtros activos en el panel desplegable (CÓMO + TIPO).
+  const filtrosActivos =
+    (transporte !== "todas" ? 1 : 0) + categorias.length;
 
   function toggleCategoria(value: string) {
     setCategorias((prev) =>
@@ -233,26 +238,60 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
 
   return (
     <div className="mt-6">
-      <div className="-mx-6 space-y-2 px-6">
-        <ChipGroup
-          label="Cuándo"
-          value={fecha}
-          onChange={(v) => setFecha(v as FechaFilter)}
-          options={FECHAS}
-        />
-        <ChipGroup
-          label="Cómo"
-          value={transporte}
-          onChange={(v) => setTransporte(v as TransporteFilter)}
-          options={TRANSPORTES}
-        />
-        <MultiChipGroup
-          label="Tipo"
-          selected={categorias}
-          onToggle={toggleCategoria}
-          onClear={() => setCategorias([])}
-          options={CATEGORIAS}
-        />
+      <div className="-mx-6 px-6">
+        {/* CUÁNDO siempre visible + botón compacto para el resto */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-1 flex-wrap gap-2">
+            {FECHAS.map((opt) => {
+              const active = fecha === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFecha(opt.value)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? "border-rio bg-rio text-crema"
+                      : "border-tinta/15 bg-white text-tinta/70"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowFiltros((v) => !v)}
+            aria-expanded={showFiltros}
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              showFiltros || filtrosActivos > 0
+                ? "border-rio bg-rio/10 text-rio"
+                : "border-tinta/15 bg-white text-tinta/70"
+            }`}
+          >
+            Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ""}
+            <span aria-hidden>{showFiltros ? "▲" : "▼"}</span>
+          </button>
+        </div>
+
+        {showFiltros ? (
+          <div className="mt-3 space-y-2 rounded-2xl border border-tinta/10 bg-white/60 p-3">
+            <ChipGroup
+              label="Cómo"
+              value={transporte}
+              onChange={(v) => setTransporte(v as TransporteFilter)}
+              options={TRANSPORTES}
+            />
+            <MultiChipGroup
+              label="Tipo"
+              selected={categorias}
+              onToggle={toggleCategoria}
+              onClear={() => setCategorias([])}
+              options={CATEGORIAS}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center gap-2">
