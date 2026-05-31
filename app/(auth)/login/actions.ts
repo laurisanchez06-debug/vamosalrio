@@ -12,11 +12,25 @@ export async function signInAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent("Completá email y contraseña.")}`);
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  let errorMessage: string | null = null;
+  try {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    errorMessage = error?.message ?? null;
+  } catch (err) {
+    // Evita el 500 sin mensaje si Supabase no responde o las env vars del
+    // deploy están mal cargadas.
+    errorMessage =
+      err instanceof Error
+        ? err.message
+        : "No pudimos iniciar sesión. Intentá de nuevo en un momento.";
+  }
 
-  if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (errorMessage) {
+    redirect(`/login?error=${encodeURIComponent(errorMessage)}`);
   }
 
   redirect(redirectTo.startsWith("/") ? redirectTo : "/feed");

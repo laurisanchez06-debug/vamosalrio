@@ -25,17 +25,28 @@ export async function signUpAction(formData: FormData) {
     );
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/completar-perfil${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`,
-    },
-  });
+  let errorMessage: string | null = null;
+  try {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/completar-perfil${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`,
+      },
+    });
+    errorMessage = error?.message ?? null;
+  } catch (err) {
+    // No dejamos que una excepción (ej. URL/clave de Supabase mal cargada en
+    // el deploy) se convierta en un 500 sin mensaje al crear cuenta.
+    errorMessage =
+      err instanceof Error
+        ? err.message
+        : "No pudimos crear la cuenta. Intentá de nuevo en un momento.";
+  }
 
-  if (error) {
-    redirect(`/registro?error=${encodeURIComponent(error.message)}${qs}`);
+  if (errorMessage) {
+    redirect(`/registro?error=${encodeURIComponent(errorMessage)}${qs}`);
   }
 
   redirect(
