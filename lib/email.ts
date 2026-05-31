@@ -170,11 +170,12 @@ export async function emailRecordatorio(p: {
   salidaId: string;
   misAportes: string[];
   cadaUno: string[];
-  quorumNota?: string | null;
+  notaHost?: string | null;
 }) {
   const lineas: string[] = [`📅 <strong>${esc(p.fechaTexto)}</strong>`];
   if (p.punto) lineas.push(`📍 ${esc(p.punto)}`);
-  if (p.quorumNota) lineas.push(`⚠️ ${esc(p.quorumNota)}`);
+  // notaHost ya viene formateada (emojis + <br/>) y con contenido controlado.
+  if (p.notaHost) lineas.push(p.notaHost);
   if (p.misAportes.length) {
     lineas.push(`🎒 Llevás vos: <strong>${p.misAportes.map(esc).join(", ")}</strong>`);
   } else if (p.cadaUno.length) {

@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const { data: salidas, error } = await admin
     .from("salidas")
     .select(
-      "id, titulo, fecha_hora, punto_encuentro_texto, host_id, participantes_minimos, estado",
+      "id, titulo, fecha_hora, punto_encuentro_texto, host_id, participantes_minimos, estado, recordatorio_host_enviado",
     )
     .gte("fecha_hora", desde)
     .lte("fecha_hora", hasta)
@@ -77,7 +77,6 @@ export async function GET(request: Request) {
       aportes.filter((a) => a.asignado_a === uid).map((a) => a.nombre);
     const fechaTexto = formatFechaLarga(s.fecha_hora);
 
-    let recienAvisados = 0;
     for (const p of aceptados) {
       if (p.recordatorio_24h_enviado) continue;
       const email = await emailDe(p.user_id);
@@ -97,17 +96,25 @@ export async function GET(request: Request) {
         .from("participaciones")
         .update({ recordatorio_24h_enviado: true })
         .eq("id", p.id);
-      recienAvisados++;
     }
 
-    // Al host se le avisa una sola vez, junto con la primera tanda de la salida
-    // (idempotente: si en esta corrida no hubo nadie nuevo, ya se avisó antes).
-    if (recienAvisados > 0) {
+    // Al host SIEMPRE se le avisa una vez (flag propio en salidas), con el
+    // conteo de confirmados y el estado del cuórum.
+    if (!s.recordatorio_host_enviado) {
+      const conf = aceptados.length;
       const min = s.participantes_minimos;
-      const quorumNota =
-        min != null && aceptados.length < min
-          ? `Todavía no llegaste al mínimo de ${min} participantes (van ${aceptados.length}).`
-          : null;
+      const partes = [
+        `Tenés <strong>${conf}</strong> ${
+          conf === 1 ? "tripulante confirmado" : "tripulantes confirmados"
+        }.`,
+      ];
+      if (min != null) {
+        partes.push(
+          conf >= min
+            ? "✅ ¡Ya tienen cuórum!"
+            : `⚠️ Todavía no llegaste al mínimo de ${min} participantes — si querés cancelar sin penalidad, podés hacerlo desde la salida.`,
+        );
+      }
       const hostEmail = await emailDe(s.host_id);
       if (hostEmail) {
         await emailRecordatorio({
@@ -118,10 +125,14 @@ export async function GET(request: Request) {
           salidaId: s.id,
           misAportes: aportesDe(s.host_id),
           cadaUno,
-          quorumNota,
+          notaHost: partes.join("<br/><br/>"),
         });
         enviados++;
       }
+      await admin
+        .from("salidas")
+        .update({ recordatorio_host_enviado: true })
+        .eq("id", s.id);
     }
   }
 
