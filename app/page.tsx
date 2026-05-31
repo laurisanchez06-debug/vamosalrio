@@ -173,8 +173,14 @@ export default function LandingPage() {
         />
 
         <div className="mx-auto max-w-5xl px-6 pb-28 pt-16 sm:pb-36 sm:pt-20">
-          <header>
+          <header className="flex items-center justify-between gap-4">
             <Logo tono="crema" />
+            <Link
+              href="/login"
+              className="text-sm font-semibold text-crema/90 transition hover:text-crema"
+            >
+              Iniciar sesión
+            </Link>
           </header>
 
           <div className="mt-16 max-w-2xl sm:mt-24">
@@ -210,6 +216,16 @@ export default function LandingPage() {
                 Explorar salidas
               </Link>
             </div>
+
+            <p className="mt-5 text-sm text-crema/75">
+              ¿Ya tenés cuenta?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-crema underline-offset-2 hover:underline"
+              >
+                Iniciá sesión →
+              </Link>
+            </p>
           </div>
         </div>
 
