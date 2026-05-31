@@ -282,6 +282,10 @@ export default async function SalidaDetallePage({
     };
   });
 
+  const aportesSinCubrir = aportes.filter(
+    (a) => a.categoria === "repartir" && !a.asignado_a,
+  ).length;
+
   const shareProps = {
     titulo: salida!.titulo,
     fechaTexto: formatFechaCorta(salida!.fecha_hora),
@@ -642,6 +646,7 @@ export default async function SalidaDetallePage({
           estadoSalida={salida!.estado}
           pendientes={pendientes}
           confirmados={confirmados}
+          aportesSinCubrir={aportesSinCubrir}
         />
       ) : null}
 

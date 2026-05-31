@@ -119,7 +119,7 @@ export default function BotonParticipar({ salidaId, estadoInicial }: Props) {
         onClick={() => setAbierto(true)}
         className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 transition active:scale-[0.98]"
       >
-        Quiero ir
+        ¡Me sumo!
       </button>
       {toast ? <Toast mensaje={toast.msg} tipo={toast.tipo} /> : null}
     </>

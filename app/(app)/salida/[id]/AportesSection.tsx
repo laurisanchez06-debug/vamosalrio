@@ -187,20 +187,23 @@ export default function AportesSection({
                                 </button>
                               ) : null}
                             </span>
-                          ) : esMiembro ? (
-                            <button
-                              type="button"
-                              disabled={isPending}
-                              onClick={() =>
-                                run(() => reclamarAporte(a.id, salidaId))
-                              }
-                              className="shrink-0 rounded-full bg-rio/10 px-3 py-1.5 text-xs font-semibold text-rio disabled:opacity-40"
-                            >
-                              Yo lo llevo
-                            </button>
                           ) : (
-                            <span className="shrink-0 text-xs text-tinta/40">
-                              Sin reclamar
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 ring-1 ring-inset ring-red-200">
+                                Sin cubrir
+                              </span>
+                              {esMiembro ? (
+                                <button
+                                  type="button"
+                                  disabled={isPending}
+                                  onClick={() =>
+                                    run(() => reclamarAporte(a.id, salidaId))
+                                  }
+                                  className="rounded-full bg-rio/10 px-3 py-1.5 text-xs font-semibold text-rio disabled:opacity-40"
+                                >
+                                  Yo lo llevo
+                                </button>
+                              ) : null}
                             </span>
                           )
                         ) : null}

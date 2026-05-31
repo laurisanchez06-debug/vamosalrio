@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import Toast from "@/components/Toast";
 import {
@@ -39,6 +40,7 @@ type Props = {
   estadoSalida: string;
   pendientes: Pendiente[];
   confirmados: ConfirmadoMin[];
+  aportesSinCubrir: number;
 };
 
 function initials(name?: string | null) {
@@ -66,7 +68,12 @@ export default function HostPanel({
   estadoSalida,
   pendientes,
   confirmados,
+  aportesSinCubrir,
 }: Props) {
+  const avisoAportes =
+    aportesSinCubrir > 0
+      ? `Hay ${aportesSinCubrir} ${aportesSinCubrir === 1 ? "aporte sin cubrir" : "aportes sin cubrir"} — recordá coordinarlo con tu tripulación.`
+      : null;
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
@@ -80,11 +87,10 @@ export default function HostPanel({
 
   function finalizarSalida() {
     if (typeof window === "undefined") return;
-    if (
-      !window.confirm(
-        "¿Marcar la salida como finalizada? Vas a poder calificar a la tripulación.",
-      )
-    ) {
+    const pregunta = avisoAportes
+      ? `¿Marcar la salida como finalizada? Vas a poder calificar a la tripulación.\n\n${avisoAportes}`
+      : "¿Marcar la salida como finalizada? Vas a poder calificar a la tripulación.";
+    if (!window.confirm(pregunta)) {
       return;
     }
     setFinalizando(true);
@@ -275,31 +281,36 @@ export default function HostPanel({
           <>
             <ul className="mt-3 divide-y divide-tinta/5 overflow-hidden rounded-2xl bg-white shadow-sm">
               {confirmados.map((c) => (
-                <li
-                  key={c.user_id}
-                  className="flex items-center gap-3 px-4 py-3"
-                >
-                  <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-rio text-xs font-bold text-crema">
-                    {c.foto_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={c.foto_url}
-                        alt={c.nombre ?? "Confirmado"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{initials(c.nombre)}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 truncate text-sm font-medium text-noche">
-                    {c.nombre ?? "Anónimo"}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-tinta/60">
-                    <span className="text-arena">★</span>
-                    <span>
-                      {Number(c.reputacion_promedio ?? 0).toFixed(1)}
+                <li key={c.user_id}>
+                  <Link
+                    href={`/perfil/${c.user_id}`}
+                    className="flex items-center gap-3 px-4 py-3 transition hover:bg-crema"
+                  >
+                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-rio text-xs font-bold text-crema">
+                      {c.foto_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={c.foto_url}
+                          alt={c.nombre ?? "Confirmado"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{initials(c.nombre)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 truncate text-sm font-medium text-noche">
+                      {c.nombre ?? "Anónimo"}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-tinta/60">
+                      <span className="text-arena">★</span>
+                      <span>
+                        {Number(c.reputacion_promedio ?? 0).toFixed(1)}
+                      </span>
+                    </div>
+                    <span aria-hidden className="text-tinta/40">
+                      ›
                     </span>
-                  </div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -331,6 +342,11 @@ export default function HostPanel({
                   Cuando vuelvan del río, marcala como finalizada para que la
                   tripulación pueda calificarse.
                 </p>
+                {avisoAportes ? (
+                  <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600 ring-1 ring-inset ring-red-200">
+                    {avisoAportes}
+                  </p>
+                ) : null}
                 <button
                   type="button"
                   onClick={finalizarSalida}
