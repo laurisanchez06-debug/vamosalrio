@@ -1,7 +1,7 @@
 {
   "name": "vamosalrio",
   "short_name": "vamosalrio",
-  "description": "Salidas al río en Rosario, con gente que ya sabés quién es.",
+  "description": "Salidas al río con gente que ya sabés quién es.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -11,10 +11,16 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/logo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

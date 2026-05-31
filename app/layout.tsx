@@ -18,10 +18,8 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "vamosalrio",
   },
-  icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
-  },
+  // Íconos servidos por convención de archivos en /app: favicon.ico, icon.png
+  // y apple-icon.png (el pin del logo).
 };
 
 export const viewport: Viewport = {
