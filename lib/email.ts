@@ -159,6 +159,41 @@ export async function emailSalidaCancelada(p: { to: string; titulo: string }) {
   );
 }
 
+// Recordatorio automático 24hs antes de la salida (Vercel Cron).
+// misAportes: lo que ESTE usuario reclamó llevar. cadaUno: aportes "cada uno
+// trae lo suyo" (fallback si no reclamó nada). quorumNota: solo para el host.
+export async function emailRecordatorio(p: {
+  to: string;
+  titulo: string;
+  fechaTexto: string;
+  punto: string | null;
+  salidaId: string;
+  misAportes: string[];
+  cadaUno: string[];
+  quorumNota?: string | null;
+}) {
+  const lineas: string[] = [`📅 <strong>${esc(p.fechaTexto)}</strong>`];
+  if (p.punto) lineas.push(`📍 ${esc(p.punto)}`);
+  if (p.quorumNota) lineas.push(`⚠️ ${esc(p.quorumNota)}`);
+  if (p.misAportes.length) {
+    lineas.push(`🎒 Llevás vos: <strong>${p.misAportes.map(esc).join(", ")}</strong>`);
+  } else if (p.cadaUno.length) {
+    lineas.push(
+      `🎒 Acordate de llevar lo tuyo: ${p.cadaUno.map(esc).join(", ")}`,
+    );
+  }
+  await send(
+    p.to,
+    `¡Mañana es la salida! 🌊 ${p.titulo}`,
+    layout({
+      titulo: "¡Mañana salís al río!",
+      cuerpo: lineas.join("<br/><br/>"),
+      ctaText: "Ver la salida",
+      ctaHref: `${appUrl()}/salida/${p.salidaId}`,
+    }),
+  );
+}
+
 // Avisa al host que un invitado aceptado se bajó de la salida.
 export async function emailInvitadoSeBajo(p: {
   to: string;
