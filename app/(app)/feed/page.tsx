@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AutoToast from "@/components/AutoToast";
 import FeedClient, { type SalidaFeed } from "./FeedClient";
@@ -15,13 +14,9 @@ export default async function FeedPage({
 }: {
   searchParams: { toast?: string };
 }) {
+  // El feed es de lectura pública: cualquiera puede ver las salidas abiertas.
+  // Las acciones (solicitar unirse) sí piden sesión, en la página de la salida.
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/login?redirect=${encodeURIComponent("/feed")}`);
-  }
 
   const { data } = await supabase
     .from("salidas")

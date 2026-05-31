@@ -59,10 +59,19 @@ export default function ChatTripulacion({
   const miembroMap = useRef(
     new Map(miembros.map((m): [string, Miembro] => [m.user_id, m])),
   ).current;
+  // Nombre de canal único por instancia: si el mismo usuario abre dos pestañas
+  // no comparten canal (evita choques de suscripción / duplicados).
+  const channelName = useRef(
+    `chat-${salidaId}-${
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2)
+    }`,
+  ).current;
 
   useEffect(() => {
     const channel = supabase
-      .channel(`chat:${salidaId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -83,7 +92,7 @@ export default function ChatTripulacion({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, salidaId]);
+  }, [supabase, salidaId, channelName]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

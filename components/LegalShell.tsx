@@ -41,9 +41,9 @@ export default function LegalShell({ titulo, actualizado, borrador, children }: 
             <Link href="/privacidad" className="hover:text-rio">
               Privacidad
             </Link>
-            <a href="mailto:comercial@kapplasrl.com" className="hover:text-rio">
+            <Link href="/contacto" className="hover:text-rio">
               Contacto
-            </a>
+            </Link>
           </nav>
           <p className="mt-4 text-xs text-tinta/40">© 2026 vamosalrio · Kappla SRL</p>
         </footer>

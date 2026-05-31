@@ -482,9 +482,9 @@ export default function LandingPage() {
               <Link href="/privacidad" className="hover:text-rio">
                 Privacidad
               </Link>
-              <a href="mailto:comercial@kapplasrl.com" className="hover:text-rio">
+              <Link href="/contacto" className="hover:text-rio">
                 Contacto
-              </a>
+              </Link>
             </nav>
           </div>
           <p className="mt-6 text-xs text-tinta/40">

@@ -110,6 +110,7 @@ export default async function MisSalidasPage() {
     .filter((p) => p.estado === "aceptado")
     .map((p) => unwrap(p.salida))
     .filter((s): s is SalidaRow => !!s)
+    .filter((s) => s.host_id !== user!.id) // tu propia salida va en "Organizadas"
     .map(aItem)
     .sort(porFechaDesc);
 
