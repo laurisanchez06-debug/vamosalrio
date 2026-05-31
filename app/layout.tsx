@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "vamosalrio — Encontrá tu próxima tripulación",
   description:
-    "Salidas al río en Rosario, con gente que ya sabés quién es. Sin grupo de WhatsApp.",
+    "Salidas al río con gente que ya sabés quién es. Sin grupo de WhatsApp.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

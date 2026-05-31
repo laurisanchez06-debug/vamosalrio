@@ -179,7 +179,7 @@ export default function LandingPage() {
           <div className="mt-16 max-w-2xl sm:mt-24">
             <span className="inline-flex items-center gap-2 rounded-full bg-crema/15 px-3 py-1 text-xs font-medium text-crema ring-1 ring-inset ring-crema/20 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-arena" />
-              Verano en Rosario · Río Paraná
+              Verano · Salidas al río
             </span>
 
             <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
@@ -187,9 +187,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-crema/85 sm:text-xl">
-              Salidas al río en Rosario con gente que ya sabés quién es. Abrís
-              una salida o te sumás a la de otro, ves quién va antes de zarpar, y
-              se califican después.{" "}
+              Salidas al río con gente que ya sabés quién es. Abrís una salida
+              o te sumás a la de otro, ves quién va antes de zarpar, y se
+              califican después.{" "}
               <span className="font-semibold text-crema">
                 Sin grupo de WhatsApp.
               </span>
@@ -222,19 +222,18 @@ export default function LandingPage() {
             El problema de siempre
           </span>
           <h2 className="mt-4 text-balance text-3xl font-bold leading-tight tracking-tight text-noche sm:text-5xl">
-            Tenés la lancha lista, pero armar la salida es un quilombo.
+            Se viene el finde soleado. Querés estar en el agua.
           </h2>
           <div className="mt-6 grid gap-5 text-pretty text-lg leading-relaxed text-tinta/70 sm:grid-cols-2">
             <p>
-              El grupo de WhatsApp explota: cien mensajes, “¿quién se prende?”,
-              gente que dice que sí y no aparece, otra que se cuelga sin avisar.
+              Coordinar con el grupo es un caos, no siempre hay alguien con
+              lancha, y nunca sabés bien con quién vas a terminar.
             </p>
             <p>
-              Y lo peor: nunca sabés bien{" "}
               <span className="font-semibold text-tinta">
-                con quién terminás arriba del bote
-              </span>
-              . Un día de río no debería empezar con incertidumbre.
+                Vamosalrio te conecta con tripulación
+              </span>{" "}
+              antes de zarpar.
             </p>
           </div>
         </div>
