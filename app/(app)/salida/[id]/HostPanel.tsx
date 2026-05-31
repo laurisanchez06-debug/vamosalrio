@@ -78,6 +78,8 @@ export default function HostPanel({
       : null;
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState(false);
+  const [cancelAbierto, setCancelAbierto] = useState(false);
+  const [cancelMotivo, setCancelMotivo] = useState<string>("");
   const [finalizando, setFinalizando] = useState(false);
   const [toast, setToast] = useState<
     { msg: string; tipo: "info" | "error" } | null
@@ -144,19 +146,15 @@ export default function HostPanel({
     );
   }
 
-  function cancelarSalida() {
-    if (typeof window === "undefined") return;
-    if (
-      !window.confirm(
-        "¿Cancelar esta salida? Esta acción no se puede deshacer.",
-      )
-    ) {
+  function confirmarCancelacion() {
+    if (!cancelMotivo) {
+      showToast("Elegí un motivo.", "error");
       return;
     }
     setCancelando(true);
     startTransition(async () => {
       try {
-        await cancelarSalidaAction(salidaId);
+        await cancelarSalidaAction(salidaId, cancelMotivo);
       } catch {
         // NEXT_REDIRECT relanza; cualquier otro error no debería ocurrir.
         setCancelando(false);
@@ -374,7 +372,7 @@ export default function HostPanel({
                 </p>
                 <button
                   type="button"
-                  onClick={cancelarSalida}
+                  onClick={() => setCancelAbierto(true)}
                   disabled={cancelando}
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-arena bg-crema px-4 text-sm font-semibold text-arena active:scale-[0.98] disabled:opacity-60"
                 >
@@ -384,6 +382,78 @@ export default function HostPanel({
             ) : null}
           </div>
         </section>
+      ) : null}
+
+      {/* Modal: cancelar salida con motivo */}
+      {cancelAbierto ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-noche/40 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-noche">¿Cancelar la salida?</h3>
+            <p className="mt-1 text-sm text-tinta/60">
+              Contanos el motivo. La tripulación queda avisada.
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {[
+                { value: "fuerza_mayor", label: "Clima / emergencia / fuerza mayor" },
+                {
+                  value: "cuorum_no_alcanzado",
+                  label: "No llegamos al mínimo de participantes",
+                },
+                { value: "personal", label: "Motivo personal" },
+              ].map((m) => {
+                const active = cancelMotivo === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setCancelMotivo(m.value)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                      active
+                        ? "border-rio bg-rio/10 text-noche"
+                        : "border-tinta/15 bg-white text-tinta/80"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
+                        active ? "border-rio bg-rio text-crema" : "border-tinta/25"
+                      }`}
+                    >
+                      {active ? "✓" : ""}
+                    </span>
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {cancelMotivo === "personal" ? (
+              <p className="mt-3 text-xs text-arena">
+                Si faltan 48hs o menos, se registra una cancelación de último
+                momento en tu perfil.
+              </p>
+            ) : null}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setCancelAbierto(false)}
+                disabled={cancelando}
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-tinta/15 bg-white px-4 text-sm font-semibold text-tinta/70 active:scale-[0.98] disabled:opacity-60"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={confirmarCancelacion}
+                disabled={cancelando || !cancelMotivo}
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl bg-arena px-4 text-sm font-semibold text-crema active:scale-[0.98] disabled:opacity-50"
+              >
+                {cancelando ? "Cancelando…" : "Cancelar salida"}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {toast ? <Toast mensaje={toast.msg} tipo={toast.tipo} /> : null}

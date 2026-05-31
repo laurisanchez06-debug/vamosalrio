@@ -12,7 +12,10 @@ import {
   emailSolicitudRechazada,
   emailSalidaFinalizada,
   emailSalidaCancelada,
+  emailInvitadoSeBajo,
 } from "@/lib/email";
+
+const MS_48H = 48 * 60 * 60 * 1000;
 
 type Result = { ok: true } | { error: string };
 
@@ -207,6 +210,94 @@ export async function rechazarSolicitudAction(
   return { ok: true };
 }
 
+// Un invitado aceptado se baja de la salida. Si falta ≤48hs se registra una
+// cancelación tardía en su perfil. En ambos casos avisa al host por mail.
+// Devuelve si hubo penalidad para que el cliente lo refleje.
+export async function dejarSalidaAction(
+  salidaId: string,
+): Promise<{ ok: true; penalizado: boolean } | { error: string }> {
+  const session = await getSessionUserOrError();
+  if (!session.user) return { error: session.error! };
+  const { supabase, user } = session;
+
+  const { data: salida } = await supabase
+    .from("salidas")
+    .select("host_id, titulo, fecha_hora, estado, cupos_ocupados")
+    .eq("id", salidaId)
+    .maybeSingle();
+
+  if (!salida) return { error: "No encontramos la salida." };
+  if (salida.host_id === user.id) return { error: "Sos el host de esta salida." };
+  if (salida.estado !== "abierta" && salida.estado !== "completa") {
+    return { error: "Esta salida ya no admite cambios." };
+  }
+
+  const { data: part } = await supabase
+    .from("participaciones")
+    .select("id, estado")
+    .eq("salida_id", salidaId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!part || part.estado !== "aceptado") {
+    return { error: "No estás en la tripulación de esta salida." };
+  }
+
+  const tarde = new Date(salida.fecha_hora).getTime() <= Date.now() + MS_48H;
+  const admin = createAdminClient();
+
+  // La RLS solo deja al host tocar participaciones → usamos service_role.
+  const { error: pErr } = await admin
+    .from("participaciones")
+    .update({ estado: "cancelado" })
+    .eq("id", part.id);
+  if (pErr) return { error: pErr.message };
+
+  // Liberar el cupo.
+  const nuevoOcupado = Math.max(0, (salida.cupos_ocupados ?? 0) - 1);
+  await admin
+    .from("salidas")
+    .update({
+      cupos_ocupados: nuevoOcupado,
+      estado: salida.estado === "completa" ? "abierta" : salida.estado,
+    })
+    .eq("id", salidaId);
+
+  // Penalidad por baja de último momento.
+  if (tarde) {
+    const { data: prof } = await admin
+      .from("profiles")
+      .select("cancelaciones_tardias")
+      .eq("id", user.id)
+      .maybeSingle();
+    await admin
+      .from("profiles")
+      .update({ cancelaciones_tardias: (prof?.cancelaciones_tardias ?? 0) + 1 })
+      .eq("id", user.id);
+  }
+
+  revalidatePath(`/salida/${salidaId}`);
+
+  try {
+    const [hostEmail, prof] = await Promise.all([
+      emailDe(admin, salida.host_id),
+      supabase.from("profiles").select("nombre").eq("id", user.id).maybeSingle(),
+    ]);
+    if (hostEmail) {
+      await emailInvitadoSeBajo({
+        to: hostEmail,
+        invitado: prof.data?.nombre ?? "Un tripulante",
+        titulo: salida.titulo ?? "tu salida",
+        salidaId,
+      });
+    }
+  } catch {
+    // fire-and-forget
+  }
+
+  return { ok: true, penalizado: tarde };
+}
+
 export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
   const session = await getSessionUserOrError();
   if (!session.user) return { error: session.error! };
@@ -260,7 +351,14 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
   return { ok: true };
 }
 
-export async function cancelarSalidaAction(salidaId: string) {
+const MOTIVOS_CANCELACION = [
+  "fuerza_mayor",
+  "cuorum_no_alcanzado",
+  "personal",
+] as const;
+type MotivoCancelacion = (typeof MOTIVOS_CANCELACION)[number];
+
+export async function cancelarSalidaAction(salidaId: string, motivo?: string) {
   const session = await getSessionUserOrError();
   if (!session.user) {
     redirect(
@@ -269,9 +367,15 @@ export async function cancelarSalidaAction(salidaId: string) {
   }
   const { supabase, user } = session;
 
+  const motivoValido = MOTIVOS_CANCELACION.includes(
+    motivo as MotivoCancelacion,
+  )
+    ? (motivo as MotivoCancelacion)
+    : "personal";
+
   const { data: salida } = await supabase
     .from("salidas")
-    .select("host_id, titulo")
+    .select("host_id, titulo, fecha_hora")
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -294,6 +398,27 @@ export async function cancelarSalidaAction(salidaId: string) {
 
   try {
     const admin = createAdminClient();
+
+    // Motivo personal con ≤48hs: el host también carga con una cancelación
+    // tardía. Fuerza mayor o cuórum no alcanzado: sin penalidad para nadie.
+    if (motivoValido === "personal") {
+      const tarde =
+        new Date(salida.fecha_hora).getTime() <= Date.now() + MS_48H;
+      if (tarde) {
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("cancelaciones_tardias")
+          .eq("id", user.id)
+          .maybeSingle();
+        await admin
+          .from("profiles")
+          .update({
+            cancelaciones_tardias: (prof?.cancelaciones_tardias ?? 0) + 1,
+          })
+          .eq("id", user.id);
+      }
+    }
+
     const { data: aceptados } = await supabase
       .from("participaciones")
       .select("user_id")

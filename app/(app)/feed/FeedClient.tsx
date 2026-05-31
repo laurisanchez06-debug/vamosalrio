@@ -10,6 +10,7 @@ import {
   formatPesos,
 } from "@/lib/format";
 import CapitanBadge from "@/components/CapitanBadge";
+import CuorumBar from "@/components/CuorumBar";
 
 type Host = {
   nombre: string | null;
@@ -29,6 +30,7 @@ export type SalidaFeed = {
   punto_encuentro_lng: number | null;
   cupos_total: number;
   cupos_ocupados: number;
+  participantes_minimos: number | null;
   transporte: string;
   categoria: string | null;
   costos: Costo[] | null;
@@ -602,6 +604,12 @@ function SalidaCard({
           />
         </div>
       </div>
+
+      <CuorumBar
+        aceptados={salida.cupos_ocupados ?? 0}
+        minimo={salida.participantes_minimos}
+        className="mt-3"
+      />
     </Link>
   );
 }

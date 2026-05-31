@@ -158,3 +158,22 @@ export async function emailSalidaCancelada(p: { to: string; titulo: string }) {
     }),
   );
 }
+
+// Avisa al host que un invitado aceptado se bajó de la salida.
+export async function emailInvitadoSeBajo(p: {
+  to: string;
+  invitado: string;
+  titulo: string;
+  salidaId: string;
+}) {
+  await send(
+    p.to,
+    `${p.invitado} se bajó de "${p.titulo}"`,
+    layout({
+      titulo: "Un tripulante se bajó",
+      cuerpo: `<strong>${esc(p.invitado)}</strong> ya no va a <strong>"${esc(p.titulo)}"</strong>. Se liberó un lugar — podés aceptar a alguien de la lista de espera.`,
+      ctaText: "Ver la salida",
+      ctaHref: `${appUrl()}/salida/${p.salidaId}`,
+    }),
+  );
+}

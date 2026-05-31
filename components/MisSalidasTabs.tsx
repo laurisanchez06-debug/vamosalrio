@@ -22,7 +22,7 @@ type TabKey = "organizadas" | "participando" | "solicitudes";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "organizadas", label: "Organizadas" },
   { key: "participando", label: "Participando" },
-  { key: "solicitudes", label: "Solicitudes" },
+  { key: "solicitudes", label: "Mis pedidos" },
 ];
 
 const ESTADO: Record<string, { label: string; className: string }> = {

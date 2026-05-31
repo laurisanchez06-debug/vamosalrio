@@ -64,6 +64,7 @@ export default function NuevaSalidaForm() {
   const [lng, setLng] = useState<number | null>(null);
   const [titulo, setTitulo] = useState("");
   const [cupos, setCupos] = useState(4);
+  const [minimo, setMinimo] = useState<number | null>(null);
   const [costos, setCostos] = useState<CostoRow[]>([]);
   const [descripcion, setDescripcion] = useState("");
   const [queLlevar, setQueLlevar] = useState("");
@@ -76,6 +77,8 @@ export default function NuevaSalidaForm() {
     [costos],
   );
   const porPersona = cupos > 0 ? Math.ceil(total / cupos) : 0;
+  // Mínimo efectivo (clampeado a cupos por si bajaron los cupos después).
+  const minimoView = minimo != null ? Math.min(minimo, cupos) : null;
 
   const transporteLabel =
     transporte === "otro"
@@ -144,6 +147,10 @@ export default function NuevaSalidaForm() {
     fd.set("punto_encuentro_texto", puntoEncuentro);
     fd.set("fecha_hora_iso", new Date(fechaHora).toISOString());
     fd.set("cupos_total", String(cupos));
+    fd.set(
+      "participantes_minimos",
+      minimoView != null ? String(minimoView) : "",
+    );
     fd.set("transporte", transporte);
     fd.set("transporte_otro", transporte === "otro" ? transporteOtro.trim() : "");
     fd.set("categoria", categoria);
@@ -378,6 +385,58 @@ export default function NuevaSalidaForm() {
               </div>
             </div>
 
+            {/* Mínimo para salir (cuórum) */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-noche">
+                Mínimo para salir{" "}
+                <span className="font-normal text-tinta/40">(opcional)</span>
+              </label>
+              <div className="flex items-center justify-between rounded-2xl border border-tinta/15 bg-white px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMinimo(
+                      minimoView == null
+                        ? null
+                        : minimoView <= 2
+                          ? null
+                          : minimoView - 1,
+                    )
+                  }
+                  disabled={minimoView == null}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-crema text-xl font-semibold text-noche disabled:opacity-40"
+                  aria-label="Bajar el mínimo"
+                >
+                  −
+                </button>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-noche">
+                    {minimoView == null ? "Sin mínimo" : minimoView}
+                  </div>
+                  <div className="text-[11px] uppercase tracking-wide text-tinta/50">
+                    {minimoView == null ? "se sale igual" : "para zarpar"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMinimo(
+                      minimoView == null ? 2 : Math.min(cupos, minimoView + 1),
+                    )
+                  }
+                  disabled={minimoView != null && minimoView >= cupos}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-rio text-xl font-semibold text-crema disabled:opacity-40"
+                  aria-label="Subir el mínimo"
+                >
+                  +
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-tinta/50">
+                Si no llegás a este número, podés cancelar sin que cuente como
+                baja.
+              </p>
+            </div>
+
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-noche">
@@ -540,7 +599,9 @@ export default function NuevaSalidaForm() {
             <ResumenRow label="Título" value={titulo || "—"} onEdit={() => setStep(4)} />
             <ResumenRow
               label="Cupos"
-              value={`${cupos} personas`}
+              value={`${cupos} personas${
+                minimoView != null ? ` · mínimo ${minimoView}` : ""
+              }`}
               onEdit={() => setStep(4)}
             />
             <ResumenRow

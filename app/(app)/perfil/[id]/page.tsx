@@ -23,7 +23,7 @@ export default async function PerfilOtroPage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan, rango_host, rango_tripulante",
+      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan, rango_host, rango_tripulante, cancelaciones_tardias",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -62,6 +62,14 @@ export default async function PerfilOtroPage({
             <RangoBadge rango={profile.rango_host} />
             <RangoBadge rango={profile.rango_tripulante} />
           </div>
+          {(profile.cancelaciones_tardias ?? 0) > 0 ? (
+            <p className="mt-1 text-xs font-medium text-red-600">
+              ⚠️ {profile.cancelaciones_tardias}{" "}
+              {profile.cancelaciones_tardias === 1
+                ? "cancelación de último momento"
+                : "cancelaciones de último momento"}
+            </p>
+          ) : null}
           {profile.instagram_handle ? (
             <a
               href={`https://instagram.com/${profile.instagram_handle}`}

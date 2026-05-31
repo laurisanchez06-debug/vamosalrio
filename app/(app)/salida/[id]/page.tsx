@@ -11,11 +11,13 @@ import {
 import AutoToast from "@/components/AutoToast";
 import MapView from "@/components/map/MapView";
 import BotonParticipar from "./BotonParticipar";
+import DejarSalida from "./DejarSalida";
 import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
 import AportesSection from "./AportesSection";
 import RangoBadge from "@/components/RangoBadge";
+import CuorumBar from "@/components/CuorumBar";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -102,7 +104,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, transporte, categoria, costos, que_llevar, estado, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, costos, que_llevar, estado, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -458,6 +460,16 @@ export default async function SalidaDetallePage({
         )}
       </div>
 
+      {/* Dejar la salida — solo invitados aceptados en una salida activa */}
+      {!isHost &&
+      estadoParticipacion === "aceptado" &&
+      !isFinalizadaOPasada &&
+      !isCancelada ? (
+        <div className="mt-3">
+          <DejarSalida salidaId={salida!.id} fechaHora={salida!.fecha_hora} />
+        </div>
+      ) : null}
+
       <section className="mt-6 space-y-3">
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="text-[11px] uppercase tracking-wide text-tinta/40">
@@ -519,6 +531,11 @@ export default async function SalidaDetallePage({
             <div className="mt-1 text-base font-semibold text-noche">
               {salida!.cupos_ocupados}/{salida!.cupos_total}
             </div>
+            <CuorumBar
+              aceptados={salida!.cupos_ocupados ?? 0}
+              minimo={salida!.participantes_minimos}
+              className="mt-2"
+            />
           </div>
           <div className="rounded-2xl bg-white p-4 shadow-sm">
             <div className="text-[11px] uppercase tracking-wide text-tinta/40">

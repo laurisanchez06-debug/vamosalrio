@@ -31,6 +31,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const punto = String(formData.get("punto_encuentro_texto") ?? "").trim();
   const fechaHoraISO = String(formData.get("fecha_hora_iso") ?? "").trim();
   const cuposRaw = Number(formData.get("cupos_total"));
+  const minimoRaw = String(formData.get("participantes_minimos") ?? "").trim();
   const transporte = String(formData.get("transporte") ?? "").trim();
   const categoria = String(formData.get("categoria") ?? "").trim();
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
@@ -44,6 +45,15 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   if (!fechaHoraISO) return { error: "Elegí fecha y hora." };
   if (!Number.isFinite(cuposRaw) || cuposRaw < 2 || cuposRaw > 20) {
     return { error: "Los cupos tienen que estar entre 2 y 20." };
+  }
+
+  // Cuórum mínimo opcional: null o un entero entre 0 y cupos.
+  let participantesMinimos: number | null = null;
+  if (minimoRaw) {
+    const m = Number(minimoRaw);
+    if (Number.isFinite(m) && m >= 0 && m <= cuposRaw) {
+      participantesMinimos = Math.round(m);
+    }
   }
   if (!transporte || !TRANSPORTES.includes(transporte as (typeof TRANSPORTES)[number])) {
     return { error: "Elegí cómo se llega." };
@@ -96,6 +106,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       punto_encuentro_lng: lng != null && Number.isFinite(lng) ? lng : null,
       fecha_hora: fecha.toISOString(),
       cupos_total: cuposRaw,
+      participantes_minimos: participantesMinimos,
       transporte,
       categoria: categoria || null,
       costos,
