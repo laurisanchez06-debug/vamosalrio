@@ -389,33 +389,13 @@ export default function LandingPage() {
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             {CAPTURAS.map((c) => (
               <figure key={c.archivo}>
-                {/* Reemplazar el div placeholder por:
-                    <img src={c.archivo} alt={c.titulo} className="w-full rounded-[2rem] ..." /> */}
-                <div className="relative mx-auto aspect-[9/19] w-full max-w-[260px] overflow-hidden rounded-[2.2rem] border-[6px] border-noche/85 bg-white shadow-xl">
-                  <div
-                    aria-hidden
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(160deg, rgba(14,165,233,0.10) 0%, rgba(245,158,11,0.10) 100%)",
-                    }}
-                  />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
-                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rio/15 text-rio">
-                      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="3" />
-                        <path d="m3 15 5-5 4 4 3-3 6 6" />
-                        <circle cx="9" cy="9" r="1.4" />
-                      </svg>
-                    </span>
-                    <span className="text-sm font-semibold text-noche">
-                      {c.titulo}
-                    </span>
-                    <code className="rounded bg-tinta/5 px-2 py-0.5 text-[10px] text-tinta/40">
-                      {c.archivo}
-                    </code>
-                  </div>
-                </div>
+                <Image
+                  src={c.archivo}
+                  alt={c.titulo}
+                  width={393}
+                  height={780}
+                  className="mx-auto h-auto w-full max-w-[260px] rounded-[2rem] shadow-xl"
+                />
                 <figcaption className="mt-4 text-center">
                   <span className="block text-sm font-semibold text-noche">
                     {c.titulo}
