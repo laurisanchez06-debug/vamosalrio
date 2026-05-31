@@ -12,14 +12,16 @@ export async function signInAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent("Completá email y contraseña.")}`);
   }
 
+  const supabase = createClient();
   let errorMessage: string | null = null;
+  let userId: string | null = null;
   try {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     errorMessage = error?.message ?? null;
+    userId = data?.user?.id ?? null;
   } catch (err) {
     // Evita el 500 sin mensaje si Supabase no responde o las env vars del
     // deploy están mal cargadas. El detalle queda en los logs del servidor.
@@ -32,6 +34,19 @@ export async function signInAction(formData: FormData) {
 
   if (errorMessage) {
     redirect(`/login?error=${encodeURIComponent(errorMessage)}`);
+  }
+
+  // Si la cuenta está bloqueada, cerramos sesión y mostramos /suspendido.
+  if (userId) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("bloqueado")
+      .eq("id", userId)
+      .maybeSingle();
+    if (prof?.bloqueado) {
+      await supabase.auth.signOut();
+      redirect("/suspendido");
+    }
   }
 
   redirect(redirectTo.startsWith("/") ? redirectTo : "/feed");
