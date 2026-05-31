@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "salida-cancelada": "Salida cancelada",
+  "password-actualizada": "Contraseña actualizada ✓",
 };
 
 export default async function FeedPage({

@@ -75,6 +75,15 @@ export default function LoginPage({
         >
           Entrar
         </button>
+
+        <p className="text-center text-sm">
+          <Link
+            href="/forgot-password"
+            className="font-medium text-tinta/60 hover:text-rio"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
       </form>
     </AuthCard>
   );
