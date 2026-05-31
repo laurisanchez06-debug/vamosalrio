@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import CapitanBadge from "@/components/CapitanBadge";
+import RangoBadge from "@/components/RangoBadge";
 import ReferenciasRecibidas from "@/components/ReferenciasRecibidas";
 
 function initials(name?: string | null) {
@@ -23,7 +23,7 @@ export default async function PerfilOtroPage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan",
+      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan, rango_host, rango_tripulante",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -59,7 +59,8 @@ export default async function PerfilOtroPage({
             <h1 className="text-2xl font-bold text-noche">
               {profile.nombre ?? "Marinero/a"}
             </h1>
-            {profile.es_capitan ? <CapitanBadge /> : null}
+            <RangoBadge rango={profile.rango_host} />
+            <RangoBadge rango={profile.rango_tripulante} />
           </div>
           {profile.instagram_handle ? (
             <a

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import Toast from "@/components/Toast";
+import RangoBadge from "@/components/RangoBadge";
 import {
   aceptarSolicitudAction,
   cancelarSalidaAction,
@@ -23,6 +24,7 @@ type ConfirmadoMin = {
   nombre: string | null;
   foto_url: string | null;
   reputacion_promedio: number | null;
+  rango_tripulante: string | null;
 };
 
 export type Pendiente = {
@@ -298,8 +300,15 @@ export default function HostPanel({
                         <span>{initials(c.nombre)}</span>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1 truncate text-sm font-medium text-noche">
-                      {c.nombre ?? "Anónimo"}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-noche">
+                        {c.nombre ?? "Anónimo"}
+                      </div>
+                      {c.rango_tripulante ? (
+                        <div className="mt-0.5">
+                          <RangoBadge rango={c.rango_tripulante} />
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-1 text-xs text-tinta/60">
                       <span className="text-arena">★</span>

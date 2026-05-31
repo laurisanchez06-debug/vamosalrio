@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularEsCapitan } from "@/lib/capitan";
+import { calcularRangoHost, calcularRangoTripulante } from "@/lib/rangos";
 
 type Result = { error: string };
 
@@ -113,6 +114,8 @@ export async function calificarAction(
       .eq("id", toUserId);
 
     await recalcularEsCapitan(admin, toUserId);
+    await calcularRangoHost(toUserId);
+    await calcularRangoTripulante(toUserId);
   }
 
   revalidatePath(`/salida/${salidaId}`);

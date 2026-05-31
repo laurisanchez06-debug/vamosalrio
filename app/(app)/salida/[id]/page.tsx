@@ -15,7 +15,7 @@ import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
 import AportesSection from "./AportesSection";
-import CapitanBadge from "@/components/CapitanBadge";
+import RangoBadge from "@/components/RangoBadge";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -41,11 +41,13 @@ type ConfirmadoRow = {
         nombre: string | null;
         foto_url: string | null;
         reputacion_promedio: number | null;
+        rango_tripulante: string | null;
       }
     | {
         nombre: string | null;
         foto_url: string | null;
         reputacion_promedio: number | null;
+        rango_tripulante: string | null;
       }[]
     | null;
 };
@@ -117,7 +119,9 @@ export default async function SalidaDetallePage({
   // Host del header / card.
   const { data: host } = await supabase
     .from("profiles")
-    .select("nombre, foto_url, reputacion_promedio, verificado, es_capitan")
+    .select(
+      "nombre, foto_url, reputacion_promedio, verificado, es_capitan, rango_host",
+    )
     .eq("id", salida!.host_id)
     .maybeSingle();
 
@@ -141,7 +145,7 @@ export default async function SalidaDetallePage({
   const { data: confirmadosData } = await supabase
     .from("participaciones")
     .select(
-      "user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, reputacion_promedio)",
+      "user_id, profile:profiles!participaciones_user_id_fkey (nombre, foto_url, reputacion_promedio, rango_tripulante)",
     )
     .eq("salida_id", salida!.id)
     .eq("estado", "aceptado")
@@ -155,6 +159,7 @@ export default async function SalidaDetallePage({
       nombre: p?.nombre ?? null,
       foto_url: p?.foto_url ?? null,
       reputacion_promedio: p?.reputacion_promedio ?? null,
+      rango_tripulante: p?.rango_tripulante ?? null,
     };
   });
 
@@ -366,7 +371,7 @@ export default async function SalidaDetallePage({
                   ✓
                 </span>
               ) : null}
-              {host.es_capitan ? <CapitanBadge /> : null}
+              <RangoBadge rango={host.rango_host} />
             </div>
             <div className="flex items-center gap-1 text-xs text-tinta/50">
               <span aria-hidden className="text-arena">

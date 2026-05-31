@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularEsCapitan } from "@/lib/capitan";
+import { calcularRangoHost, calcularRangoTripulante } from "@/lib/rangos";
 import {
   emailNuevaSolicitud,
   emailSolicitudAceptada,
@@ -229,9 +230,11 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
     .eq("id", salidaId);
   if (error) return { error: error.message };
 
-  // El host pudo alcanzar el criterio de Capitán al sumar una salida finalizada.
+  // El host pudo subir de rango al sumar una salida finalizada.
   const admin = createAdminClient();
   await recalcularEsCapitan(admin, user.id);
+  await calcularRangoHost(user.id);
+  await calcularRangoTripulante(user.id);
 
   try {
     const { data: aceptados } = await supabase
