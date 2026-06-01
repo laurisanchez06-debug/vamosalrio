@@ -38,14 +38,14 @@ export default function AuthCard({
           <Image
             src="/vamosalrio_logo_full.png"
             alt="vamosalrio"
-            width={320}
-            height={120}
+            width={1007}
+            height={897}
             priority
-            className="mt-8 h-16 w-auto"
+            className="mx-auto mt-10 mb-8 block h-28 w-auto max-w-[60%] object-contain"
           />
         ) : null}
 
-        <div className="mt-10">
+        <div className={logo ? "" : "mt-10"}>
           <h1 className="text-3xl font-bold tracking-tight text-noche">
             {titulo}
           </h1>
