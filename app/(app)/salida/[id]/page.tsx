@@ -16,6 +16,7 @@ import { BotonesCompartir, IconoCompartirHeader } from "./Compartir";
 import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
 import AportesSection from "./AportesSection";
+import SalidaTabs from "./SalidaTabs";
 import RangoBadge from "@/components/RangoBadge";
 import CuorumBar from "@/components/CuorumBar";
 
@@ -300,8 +301,243 @@ export default async function SalidaDetallePage({
     cuposLibres,
   };
 
-  const confirmadosVisible = confirmados.slice(0, 5);
-  const confirmadosExtra = Math.max(0, confirmados.length - 5);
+  const puedeDejar =
+    !isHost &&
+    estadoParticipacion === "aceptado" &&
+    !isFinalizadaOPasada &&
+    !isCancelada;
+
+  // ─── Panel "Info" ──────────────────────────────────────────────────────
+  const infoPanel = (
+    <div className="space-y-3">
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+          Cuándo
+        </div>
+        <div className="mt-1 text-base font-semibold text-noche">
+          {formatFechaLarga(salida!.fecha_hora)}
+        </div>
+      </div>
+
+      {salida!.punto_encuentro_texto ||
+      (salida!.punto_encuentro_lat != null &&
+        salida!.punto_encuentro_lng != null) ? (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Punto de encuentro
+          </div>
+          {salida!.punto_encuentro_texto ? (
+            <div className="mt-1 text-base font-semibold text-noche">
+              {salida!.punto_encuentro_texto}
+            </div>
+          ) : null}
+          {salida!.punto_encuentro_lat != null &&
+          salida!.punto_encuentro_lng != null ? (
+            <div className="mt-3 space-y-3">
+              <MapView
+                lat={salida!.punto_encuentro_lat}
+                lng={salida!.punto_encuentro_lng}
+              />
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${salida!.punto_encuentro_lat},${salida!.punto_encuentro_lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rio/30 bg-rio/5 px-4 text-sm font-semibold text-rio active:scale-[0.98]"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                </svg>
+                Cómo llegar
+              </a>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Cupos
+          </div>
+          <div className="mt-1 text-base font-semibold text-noche">
+            {salida!.cupos_ocupados}/{salida!.cupos_total}
+          </div>
+          <CuorumBar
+            aceptados={salida!.cupos_ocupados ?? 0}
+            minimo={salida!.participantes_minimos}
+            className="mt-2"
+          />
+        </div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Transporte
+          </div>
+          <div className="mt-1 text-base font-semibold text-noche">
+            {TRANSPORTE_LABEL[salida!.transporte] ?? salida!.transporte}
+          </div>
+        </div>
+      </div>
+
+      {costos.length > 0 ? (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Costos compartidos
+          </div>
+          <ul className="mt-2 space-y-1 text-sm text-tinta/80">
+            {costos.map((c, i) => (
+              <li key={i} className="flex justify-between">
+                <span>{c.concepto || "—"}</span>
+                <span className="font-medium text-noche">
+                  {formatPesos(Number(c.monto) || 0)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex items-center justify-between border-t border-tinta/10 pt-3 text-sm">
+            <span className="text-tinta/60">Total</span>
+            <span className="font-semibold text-noche">
+              {formatPesos(totalCostos)}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-sm">
+            <span className="text-tinta/60">Por persona</span>
+            <span className="font-semibold text-rio">
+              {formatPesos(porPersona)}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {salida!.que_llevar ? (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Qué llevar
+          </div>
+          <p className="mt-1 whitespace-pre-line text-sm text-tinta/80">
+            {salida!.que_llevar}
+          </p>
+        </div>
+      ) : null}
+
+      <BotonesCompartir {...shareProps} />
+    </div>
+  );
+
+  // ─── Panel "Tripulación" ───────────────────────────────────────────────
+  const tripulacionPanel = isHost ? (
+    <HostPanel
+      salidaId={salida!.id}
+      titulo={salida!.titulo}
+      fechaTexto={formatFechaCorta(salida!.fecha_hora)}
+      punto={salida!.punto_encuentro_texto}
+      estadoSalida={salida!.estado}
+      pendientes={pendientes}
+      confirmados={confirmados}
+      aportesSinCubrir={aportesSinCubrir}
+    />
+  ) : (
+    <div className="space-y-6">
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/60">
+          Tripulación confirmada
+        </h2>
+        {confirmados.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-6 text-center text-sm text-tinta/60">
+            Todavía no hay confirmados. ¡Sumate vos!
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-tinta/5 overflow-hidden rounded-2xl bg-white shadow-sm">
+            {confirmados.map((c) => (
+              <li key={c.user_id}>
+                <Link
+                  href={`/perfil/${c.user_id}`}
+                  className="flex items-center gap-3 px-4 py-3 transition hover:bg-crema"
+                >
+                  <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-rio text-xs font-bold text-crema">
+                    {c.foto_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={c.foto_url}
+                        alt={c.nombre ?? "Confirmado"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{initials(c.nombre)}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-noche">
+                      {c.nombre ?? "Anónimo"}
+                    </div>
+                    {c.rango_tripulante ? (
+                      <div className="mt-0.5">
+                        <RangoBadge rango={c.rango_tripulante} />
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-tinta/60">
+                    <span className="text-arena">★</span>
+                    <span>
+                      {Number(c.reputacion_promedio ?? 0).toFixed(1)}
+                    </span>
+                  </div>
+                  <span aria-hidden className="text-tinta/40">
+                    ›
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {puedeDejar ? (
+        <DejarSalida salidaId={salida!.id} fechaHora={salida!.fecha_hora} />
+      ) : null}
+    </div>
+  );
+
+  // ─── Panel "Aportes" ───────────────────────────────────────────────────
+  const aportesPanel = (
+    <AportesSection
+      salidaId={salida!.id}
+      aportes={aportes}
+      isHost={isHost}
+      esMiembro={esMiembro}
+      currentUserId={user?.id ?? null}
+    />
+  );
+
+  // ─── Panel "Chat" ──────────────────────────────────────────────────────
+  const chatPanel = esMiembro ? (
+    <ChatTripulacion
+      salidaId={salida!.id}
+      currentUserId={user!.id}
+      miembros={miembrosChat}
+      initialMensajes={chatMensajes}
+      cerrado={chatCerrado}
+    />
+  ) : (
+    <div className="rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-10 text-center">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-rio/10 text-xl">
+        💬
+      </div>
+      <p className="mt-3 text-sm font-medium text-noche">
+        El chat es de la tripulación
+      </p>
+      <p className="mt-1 text-sm text-tinta/60">
+        Sumate a la salida para charlar con el grupo.
+      </p>
+    </div>
+  );
 
   return (
     <div className="px-6 pt-6 pb-10">
@@ -321,6 +557,7 @@ export default async function SalidaDetallePage({
         </div>
       ) : null}
 
+      {/* ─── Header: título, host, estado ─── */}
       <header className="mt-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full bg-arena/15 px-3 py-1 text-xs font-medium text-arena">
@@ -390,9 +627,9 @@ export default async function SalidaDetallePage({
         </Link>
       ) : null}
 
-      {/* CTA principal */}
-      <div className="mt-6">
-        {isCancelada ? (
+      {/* CTA principal (invitados / estados finales). El host gestiona en la tab Tripulación. */}
+      {isCancelada ? (
+        <div className="mt-6">
           <button
             type="button"
             disabled
@@ -400,8 +637,10 @@ export default async function SalidaDetallePage({
           >
             Salida cancelada
           </button>
-        ) : isFinalizadaOPasada ? (
-          puedeCalificar ? (
+        </div>
+      ) : isFinalizadaOPasada ? (
+        <div className="mt-6">
+          {puedeCalificar ? (
             <Link
               href={`/salida/${salida!.id}/calificar`}
               className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 active:scale-[0.98]"
@@ -424,27 +663,19 @@ export default async function SalidaDetallePage({
             >
               Salida finalizada
             </button>
-          )
-        ) : !user ? (
+          )}
+        </div>
+      ) : isHost ? null : !user ? (
+        <div className="mt-6">
           <Link
             href={`/registro?redirect=${encodeURIComponent(`/salida/${salida!.id}`)}`}
             className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 active:scale-[0.98]"
           >
             Sumate a la tripulación
           </Link>
-        ) : isHost ? (
-          <a
-            href="#solicitudes"
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-noche px-6 text-base font-semibold text-crema active:scale-[0.98]"
-          >
-            Gestionar solicitudes
-            {pendientes.length > 0 ? (
-              <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-arena px-1.5 text-[11px] font-bold text-crema">
-                {pendientes.length}
-              </span>
-            ) : null}
-          </a>
-        ) : cuposCompletos && !estadoParticipacion ? (
+        </div>
+      ) : cuposCompletos && !estadoParticipacion ? (
+        <div className="mt-6">
           <button
             type="button"
             disabled
@@ -452,225 +683,24 @@ export default async function SalidaDetallePage({
           >
             Cupos completos
           </button>
-        ) : (
+        </div>
+      ) : (
+        <div className="mt-6">
           <BotonParticipar
             salidaId={salida!.id}
             estadoInicial={estadoParticipacion}
           />
-        )}
-      </div>
-
-      {/* Dejar la salida — solo invitados aceptados en una salida activa */}
-      {!isHost &&
-      estadoParticipacion === "aceptado" &&
-      !isFinalizadaOPasada &&
-      !isCancelada ? (
-        <div className="mt-3">
-          <DejarSalida salidaId={salida!.id} fechaHora={salida!.fecha_hora} />
         </div>
-      ) : null}
+      )}
 
-      <section className="mt-6 space-y-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-            Cuándo
-          </div>
-          <div className="mt-1 text-base font-semibold text-noche">
-            {formatFechaLarga(salida!.fecha_hora)}
-          </div>
-        </div>
-
-        {salida!.punto_encuentro_texto ||
-        (salida!.punto_encuentro_lat != null &&
-          salida!.punto_encuentro_lng != null) ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-              Punto de encuentro
-            </div>
-            {salida!.punto_encuentro_texto ? (
-              <div className="mt-1 text-base font-semibold text-noche">
-                {salida!.punto_encuentro_texto}
-              </div>
-            ) : null}
-            {salida!.punto_encuentro_lat != null &&
-            salida!.punto_encuentro_lng != null ? (
-              <div className="mt-3 space-y-3">
-                <MapView
-                  lat={salida!.punto_encuentro_lat}
-                  lng={salida!.punto_encuentro_lng}
-                />
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${salida!.punto_encuentro_lat},${salida!.punto_encuentro_lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rio/30 bg-rio/5 px-4 text-sm font-semibold text-rio active:scale-[0.98]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 11l19-9-9 19-2-8-8-2z" />
-                  </svg>
-                  Cómo llegar
-                </a>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-              Cupos
-            </div>
-            <div className="mt-1 text-base font-semibold text-noche">
-              {salida!.cupos_ocupados}/{salida!.cupos_total}
-            </div>
-            <CuorumBar
-              aceptados={salida!.cupos_ocupados ?? 0}
-              minimo={salida!.participantes_minimos}
-              className="mt-2"
-            />
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-              Transporte
-            </div>
-            <div className="mt-1 text-base font-semibold text-noche">
-              {TRANSPORTE_LABEL[salida!.transporte] ?? salida!.transporte}
-            </div>
-          </div>
-        </div>
-
-        {costos.length > 0 ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-              Costos compartidos
-            </div>
-            <ul className="mt-2 space-y-1 text-sm text-tinta/80">
-              {costos.map((c, i) => (
-                <li key={i} className="flex justify-between">
-                  <span>{c.concepto || "—"}</span>
-                  <span className="font-medium text-noche">
-                    {formatPesos(Number(c.monto) || 0)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-3 flex items-center justify-between border-t border-tinta/10 pt-3 text-sm">
-              <span className="text-tinta/60">Total</span>
-              <span className="font-semibold text-noche">
-                {formatPesos(totalCostos)}
-              </span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-sm">
-              <span className="text-tinta/60">Por persona</span>
-              <span className="font-semibold text-rio">
-                {formatPesos(porPersona)}
-              </span>
-            </div>
-          </div>
-        ) : null}
-
-        {salida!.que_llevar ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-              Qué llevar
-            </div>
-            <p className="mt-1 whitespace-pre-line text-sm text-tinta/80">
-              {salida!.que_llevar}
-            </p>
-          </div>
-        ) : null}
-      </section>
-
-      {/* Stack público de avatares — solo para no-host (host ve lista rica abajo) */}
-      {!isHost ? (
-        <section className="mt-6">
-          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
-            Tripulación confirmada
-          </div>
-          {confirmados.length === 0 ? (
-            <p className="mt-2 text-sm text-tinta/50">
-              Todavía no hay confirmados.
-            </p>
-          ) : (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {confirmadosVisible.map((c) => (
-                  <div
-                    key={c.user_id}
-                    title={c.nombre ?? ""}
-                    className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border-2 border-crema bg-rio text-xs font-bold text-crema"
-                  >
-                    {c.foto_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={c.foto_url}
-                        alt={c.nombre ?? "Participante"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{initials(c.nombre)}</span>
-                    )}
-                  </div>
-                ))}
-                {confirmadosExtra > 0 ? (
-                  <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-crema bg-tinta/10 text-xs font-bold text-tinta/70">
-                    +{confirmadosExtra}
-                  </div>
-                ) : null}
-              </div>
-              <span className="text-sm text-tinta/60">
-                {confirmados.length}{" "}
-                {confirmados.length === 1 ? "confirmado" : "confirmados"}
-              </span>
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {/* Compartir (siempre visible) */}
-      <BotonesCompartir {...shareProps} />
-
-      {/* Aportes — lista pública; reclamar solo tripulación */}
-      <AportesSection
-        salidaId={salida!.id}
-        aportes={aportes}
-        isHost={isHost}
-        esMiembro={esMiembro}
-        currentUserId={user?.id ?? null}
+      {/* ─── Tabs ─── */}
+      <SalidaTabs
+        info={infoPanel}
+        tripulacion={tripulacionPanel}
+        aportes={aportesPanel}
+        chat={chatPanel}
+        pendientesCount={isHost ? pendientes.length : 0}
       />
-
-      {/* Chat de la tripulación — solo host + aceptados */}
-      {esMiembro ? (
-        <ChatTripulacion
-          salidaId={salida!.id}
-          currentUserId={user!.id}
-          miembros={miembrosChat}
-          initialMensajes={chatMensajes}
-          cerrado={chatCerrado}
-        />
-      ) : null}
-
-      {/* Panel del host */}
-      {isHost ? (
-        <HostPanel
-          salidaId={salida!.id}
-          titulo={salida!.titulo}
-          fechaTexto={formatFechaCorta(salida!.fecha_hora)}
-          punto={salida!.punto_encuentro_texto}
-          estadoSalida={salida!.estado}
-          pendientes={pendientes}
-          confirmados={confirmados}
-          aportesSinCubrir={aportesSinCubrir}
-        />
-      ) : null}
 
       {searchParams.toast && TOAST_MENSAJES[searchParams.toast] ? (
         <AutoToast mensaje={TOAST_MENSAJES[searchParams.toast]} />

@@ -119,7 +119,7 @@ export default function ChatTripulacion({
   }
 
   return (
-    <section className="mt-10">
+    <section>
       <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/60">
         Chat de la tripulación
       </h2>

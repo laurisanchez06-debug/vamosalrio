@@ -5,12 +5,10 @@ import { useMemo, useState } from "react";
 import {
   CATEGORIAS,
   CATEGORIA_LABEL,
-  TRANSPORTE_LABEL,
   formatFechaCorta,
   formatPesos,
 } from "@/lib/format";
 import CapitanBadge from "@/components/CapitanBadge";
-import CuorumBar from "@/components/CuorumBar";
 
 type Host = {
   nombre: string | null;
@@ -360,7 +358,7 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
           </button>
         </div>
       ) : (
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-3 space-y-2.5">
           {conDistancia.map(({ salida, dist }) => (
             <li key={salida.id}>
               <SalidaCard salida={salida} distanciaKm={dist} />
@@ -511,10 +509,11 @@ function SalidaCard({
   return (
     <Link
       href={`/salida/${salida.id}`}
-      className="block rounded-2xl bg-white p-4 shadow-sm transition active:scale-[0.99]"
+      className="block rounded-2xl bg-white px-4 py-3 shadow-sm transition active:scale-[0.99]"
     >
-      <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-rio text-sm font-bold text-crema">
+      {/* Fila 1: avatar + nombre + rating + estado */}
+      <div className="flex items-center gap-2">
+        <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-rio text-xs font-bold text-crema">
           {host?.foto_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -526,90 +525,75 @@ function SalidaCard({
             <span>{initials(host?.nombre)}</span>
           )}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-semibold text-noche">
-              {host?.nombre ?? "Anónimo"}
-            </span>
-            {host?.es_capitan ? <CapitanBadge /> : null}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-tinta/50">
-            <span aria-hidden className="text-arena">
-              ★
-            </span>
-            <span>{reputacion.toFixed(1)}</span>
-          </div>
-        </div>
+        <span className="truncate text-sm font-semibold text-noche">
+          {host?.nombre ?? "Anónimo"}
+        </span>
+        {host?.es_capitan ? <CapitanBadge /> : null}
+        <span className="flex shrink-0 items-center gap-0.5 text-xs text-tinta/50">
+          <span aria-hidden className="text-arena">
+            ★
+          </span>
+          {reputacion.toFixed(1)}
+        </span>
         <span
-          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}
+          className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}
         >
           {badgeLabel}
         </span>
       </div>
 
-      {categoriaLabel || distanciaKm != null ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {categoriaLabel ? (
-            <span className="inline-flex items-center rounded-full bg-rio/10 px-2.5 py-0.5 text-[11px] font-semibold text-rio">
-              {categoriaLabel}
-            </span>
-          ) : null}
-          {distanciaKm != null ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-noche/5 px-2.5 py-0.5 text-[11px] font-semibold text-noche">
-              📍 {fmtKm(distanciaKm)}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
-      <h3 className="mt-2 text-lg font-semibold leading-tight text-noche">
-        {salida.titulo}
-      </h3>
-
-      <dl className="mt-3 space-y-1 text-sm text-tinta/70">
-        <div className="flex items-center gap-2">
-          <span aria-hidden>📅</span>
-          <dd>{formatFechaCorta(salida.fecha_hora)}</dd>
-        </div>
-        {salida.punto_encuentro_texto ? (
-          <div className="flex items-center gap-2">
-            <span aria-hidden>📍</span>
-            <dd className="truncate">{salida.punto_encuentro_texto}</dd>
-          </div>
-        ) : null}
-        <div className="flex items-center gap-2">
-          <span aria-hidden>🛶</span>
-          <dd>{TRANSPORTE_LABEL[salida.transporte] ?? salida.transporte}</dd>
-        </div>
-      </dl>
-
-      <div className="mt-3">
-        <div className="flex items-center justify-between text-xs text-tinta/60">
-          <span>
-            {cuposLibres} de {salida.cupos_total} disponibles
+      {/* Fila 2: badge tipo + título */}
+      <div className="mt-2 flex items-baseline gap-2">
+        {categoriaLabel ? (
+          <span className="inline-flex shrink-0 items-center self-center rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
+            {categoriaLabel}
           </span>
-          {total > 0 ? (
-            <span className="font-semibold text-rio">
-              {formatPesos(porPersona)} por persona
+        ) : null}
+        <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">
+          {salida.titulo}
+        </h3>
+      </div>
+
+      {/* Fila 3: fecha · lugar (una línea) */}
+      <div className="mt-1.5 flex items-center gap-1 text-xs text-tinta/60">
+        <span aria-hidden>📅</span>
+        <span className="shrink-0">{formatFechaCorta(salida.fecha_hora)}</span>
+        {salida.punto_encuentro_texto ? (
+          <>
+            <span aria-hidden className="text-tinta/30">
+              ·
             </span>
-          ) : (
-            <span className="text-tinta/50">Sin costo</span>
-          )}
-        </div>
-        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-tinta/10">
+            <span aria-hidden>📍</span>
+            <span className="truncate">{salida.punto_encuentro_texto}</span>
+          </>
+        ) : null}
+        {distanciaKm != null ? (
+          <span className="shrink-0 font-medium text-noche/70">
+            · {fmtKm(distanciaKm)}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Fila 4: disponibilidad + costo */}
+      <div className="mt-2.5 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tinta/10">
           <div
             className="h-full rounded-full bg-rio transition-all"
             style={{ width: `${ocupadoPct}%` }}
             aria-hidden
           />
         </div>
+        <span className="shrink-0 text-xs text-tinta/60">
+          {cuposLibres}/{salida.cupos_total}
+        </span>
+        {total > 0 ? (
+          <span className="shrink-0 text-xs font-semibold text-rio">
+            {formatPesos(porPersona)}
+          </span>
+        ) : (
+          <span className="shrink-0 text-xs text-tinta/50">Gratis</span>
+        )}
       </div>
-
-      <CuorumBar
-        aceptados={salida.cupos_ocupados ?? 0}
-        minimo={salida.participantes_minimos}
-        className="mt-3"
-      />
     </Link>
   );
 }

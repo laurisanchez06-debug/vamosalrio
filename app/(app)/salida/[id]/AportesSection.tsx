@@ -95,7 +95,7 @@ export default function AportesSection({
   const porCat = (c: string) => aportes.filter((a) => a.categoria === c);
 
   return (
-    <section className="mt-10">
+    <section>
       <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/60">
         Aportes
       </h2>

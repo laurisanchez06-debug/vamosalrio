@@ -164,7 +164,7 @@ export default function HostPanel({
   }
 
   return (
-    <div id="solicitudes" className="mt-10 scroll-mt-20 space-y-8">
+    <div className="space-y-8">
       {/* ─── Pendientes ──────────────────────────────────────────────── */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-tinta/60">
