@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CATEGORIAS,
   categoriaLabel,
@@ -141,14 +141,19 @@ function initials(name?: string | null) {
     .toUpperCase();
 }
 
+const PAGE_SIZE = 10;
+
 export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
-  const [fecha, setFecha] = useState<FechaFilter>("todas");
+  // El feed abre filtrado por "Este finde" por defecto.
+  const [fecha, setFecha] = useState<FechaFilter>("finde");
   const [transporte, setTransporte] = useState<TransporteFilter>("todas");
   const [categorias, setCategorias] = useState<string[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [geo, setGeo] = useState<GeoState>("idle");
   const [cerca, setCerca] = useState(false);
   const [showFiltros, setShowFiltros] = useState(false);
+  // Cuántas cards mostrar (paginado de a PAGE_SIZE con "Ver más").
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
   // Filtros activos en el panel desplegable (CÓMO + TIPO).
   const filtrosActivos =
@@ -214,6 +219,14 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
     }
     return arr;
   }, [filtradas, pos, cerca]);
+
+  // Al cambiar cualquier filtro/orden, volvemos al primer tramo.
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [fecha, transporte, categorias, cerca, pos]);
+
+  const visibles = conDistancia.slice(0, visible);
+  const hayMas = conDistancia.length > visible;
 
   if (salidas.length === 0) {
     return (
@@ -344,30 +357,56 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
       </p>
 
       {conDistancia.length === 0 ? (
-        <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
-          <p className="text-sm text-tinta/60">
-            Ninguna salida coincide con esos filtros.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setFecha("todas");
-              setTransporte("todas");
-              setCategorias([]);
-            }}
-            className="mt-3 text-sm font-semibold text-rio"
-          >
-            Limpiar filtros
-          </button>
-        </div>
+        fecha === "finde" ? (
+          <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
+            <p className="text-sm text-tinta/60">
+              No hay salidas este finde — mirá las de esta semana.
+            </p>
+            <button
+              type="button"
+              onClick={() => setFecha("semana")}
+              className="mt-3 inline-flex h-10 items-center justify-center rounded-2xl bg-rio px-5 text-sm font-semibold text-crema active:scale-[0.98]"
+            >
+              Ver las de esta semana
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
+            <p className="text-sm text-tinta/60">
+              Ninguna salida coincide con esos filtros.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFecha("todas");
+                setTransporte("todas");
+                setCategorias([]);
+              }}
+              className="mt-3 text-sm font-semibold text-rio"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )
       ) : (
-        <ul className="mt-3 space-y-2.5">
-          {conDistancia.map(({ salida, dist }) => (
-            <li key={salida.id}>
-              <SalidaCard salida={salida} distanciaKm={dist} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-3 space-y-2.5">
+            {visibles.map(({ salida, dist }) => (
+              <li key={salida.id}>
+                <SalidaCard salida={salida} distanciaKm={dist} />
+              </li>
+            ))}
+          </ul>
+          {hayMas ? (
+            <button
+              type="button"
+              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-tinta/15 bg-white text-sm font-semibold text-tinta/70 active:scale-[0.98]"
+            >
+              Ver más ({conDistancia.length - visible} más)
+            </button>
+          ) : null}
+        </>
       )}
     </div>
   );
