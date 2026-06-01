@@ -34,6 +34,8 @@ export type SalidaFeed = {
   transporte: string;
   categoria: string | null;
   tipo_otro: string | null;
+  edad_min: number | null;
+  edad_max: number | null;
   costos: Costo[] | null;
   estado: string;
   host_id: string;
@@ -546,6 +548,16 @@ function SalidaCard({
   const reputacion = Number(host?.reputacion_promedio ?? 0);
   const tipoLabel = categoriaLabel(salida.categoria, salida.tipo_otro);
 
+  // Restricción de edad: badge discreto (no esconde la salida del feed).
+  let edadBadge: string | null = null;
+  if (salida.edad_min != null && salida.edad_max != null) {
+    edadBadge = `Edad ${salida.edad_min}-${salida.edad_max}`;
+  } else if (salida.edad_min != null) {
+    edadBadge = `Edad ${salida.edad_min}+`;
+  } else if (salida.edad_max != null) {
+    edadBadge = `Edad hasta ${salida.edad_max}`;
+  }
+
   return (
     <Link
       href={`/salida/${salida.id}`}
@@ -587,6 +599,11 @@ function SalidaCard({
         {tipoLabel ? (
           <span className="inline-flex max-w-[55%] shrink-0 items-center self-center truncate rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
             {tipoLabel}
+          </span>
+        ) : null}
+        {edadBadge ? (
+          <span className="inline-flex shrink-0 items-center self-center rounded-full bg-noche/5 px-2 py-0.5 text-[11px] font-semibold text-tinta/60">
+            {edadBadge}
           </span>
         ) : null}
         <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">
