@@ -23,6 +23,8 @@ const CATEGORIA_EMOJI: Record<string, string> = {
   playa_isla: "🏖️",
   asado_isla: "🔥",
   deportes_nauticos: "🏄",
+  campamento: "⛺",
+  otro: "✨",
 };
 
 const PASOS = [
@@ -56,6 +58,7 @@ export default function NuevaSalidaForm() {
 
   // Datos acumulados.
   const [categoria, setCategoria] = useState<string>("");
+  const [tipoOtro, setTipoOtro] = useState("");
   const [transporte, setTransporte] = useState<string>("");
   const [transporteOtro, setTransporteOtro] = useState("");
   const [fechaHora, setFechaHora] = useState("");
@@ -85,8 +88,10 @@ export default function NuevaSalidaForm() {
     transporte === "otro"
       ? transporteOtro.trim() || "Otro"
       : TRANSPORTE_LABEL[transporte] ?? transporte;
-  const categoriaLabel =
-    CATEGORIAS.find((c) => c.value === categoria)?.label ?? null;
+  const categoriaLabelView =
+    categoria === "otro"
+      ? tipoOtro.trim() || "Otro"
+      : CATEGORIAS.find((c) => c.value === categoria)?.label ?? null;
 
   function addCosto() {
     setCostos((arr) => [...arr, { id: nuevoId(), concepto: "", monto: "" }]);
@@ -100,7 +105,11 @@ export default function NuevaSalidaForm() {
 
   // Devuelve un mensaje de error si el paso no está completo, o null si está OK.
   function validarPaso(n: number): string | null {
-    if (n === 1 && !categoria) return "Elegí qué tipo de salida es.";
+    if (n === 1) {
+      if (!categoria) return "Elegí qué tipo de salida es.";
+      if (categoria === "otro" && !tipoOtro.trim())
+        return "Contanos qué tipo de salida es.";
+    }
     if (n === 2) {
       if (!transporte) return "Elegí cómo llegan al agua.";
       if (transporte === "otro" && !transporteOtro.trim())
@@ -155,6 +164,7 @@ export default function NuevaSalidaForm() {
     fd.set("transporte", transporte);
     fd.set("transporte_otro", transporte === "otro" ? transporteOtro.trim() : "");
     fd.set("categoria", categoria);
+    fd.set("tipo_otro", categoria === "otro" ? tipoOtro.trim() : "");
     fd.set("que_llevar", queLlevar);
     fd.set("es_privada", esPrivada ? "1" : "");
     fd.set("punto_encuentro_lat", lat != null ? String(lat) : "");
@@ -203,33 +213,56 @@ export default function NuevaSalidaForm() {
       <div className="mt-5">
         {/* ── Paso 1: tipo ───────────────────────────────────────────── */}
         {step === 1 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {CATEGORIAS.map((opt) => {
-              const active = categoria === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setCategoria(opt.value)}
-                  className={`flex flex-col items-center gap-2 rounded-3xl border-2 p-5 text-center transition active:scale-[0.98] ${
-                    active
-                      ? "border-rio bg-rio/10"
-                      : "border-tinta/10 bg-white"
-                  }`}
-                >
-                  <span className="text-4xl">
-                    {CATEGORIA_EMOJI[opt.value] ?? "🌊"}
-                  </span>
-                  <span
-                    className={`text-sm font-semibold ${
-                      active ? "text-rio" : "text-noche"
+          <div>
+            <div className="grid grid-cols-2 gap-3">
+              {CATEGORIAS.map((opt) => {
+                const active = categoria === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCategoria(opt.value)}
+                    className={`flex flex-col items-center gap-2 rounded-3xl border-2 p-5 text-center transition active:scale-[0.98] ${
+                      active
+                        ? "border-rio bg-rio/10"
+                        : "border-tinta/10 bg-white"
                     }`}
                   >
-                    {opt.label}
-                  </span>
-                </button>
-              );
-            })}
+                    <span className="text-4xl">
+                      {CATEGORIA_EMOJI[opt.value] ?? "🌊"}
+                    </span>
+                    <span
+                      className={`text-sm font-semibold ${
+                        active ? "text-rio" : "text-noche"
+                      }`}
+                    >
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {categoria === "otro" ? (
+              <div className="mt-4">
+                <label
+                  htmlFor="tipo_otro"
+                  className="mb-1 block text-sm font-medium text-noche"
+                >
+                  ¿Cuál? <span className="text-arena">*</span>
+                </label>
+                <input
+                  id="tipo_otro"
+                  type="text"
+                  autoFocus
+                  value={tipoOtro}
+                  onChange={(e) => setTipoOtro(e.target.value)}
+                  maxLength={60}
+                  placeholder="Ej: avistaje de aves, fotografía, limpieza de costa…"
+                  className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -603,7 +636,7 @@ export default function NuevaSalidaForm() {
           <div className="space-y-3">
             <ResumenRow
               label="Tipo"
-              value={categoriaLabel ?? "—"}
+              value={categoriaLabelView ?? "—"}
               onEdit={() => setStep(1)}
             />
             <ResumenRow

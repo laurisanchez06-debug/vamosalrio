@@ -34,6 +34,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const minimoRaw = String(formData.get("participantes_minimos") ?? "").trim();
   const transporte = String(formData.get("transporte") ?? "").trim();
   const categoria = String(formData.get("categoria") ?? "").trim();
+  const tipoOtro = String(formData.get("tipo_otro") ?? "").trim().slice(0, 60);
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
   const esPrivada = String(formData.get("es_privada") ?? "").trim() === "1";
   const latRaw = String(formData.get("punto_encuentro_lat") ?? "").trim();
@@ -58,6 +59,11 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   }
   if (!transporte || !TRANSPORTES.includes(transporte as (typeof TRANSPORTES)[number])) {
     return { error: "Elegí cómo se llega." };
+  }
+
+  // Tipo "Otro" exige especificar cuál (igual que el transporte).
+  if (categoria === "otro" && !tipoOtro) {
+    return { error: "Contanos qué tipo de salida es." };
   }
 
   // "Otro" exige especificar cuál (cierra el bug de "Otro sin completar").
@@ -110,6 +116,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       participantes_minimos: participantesMinimos,
       transporte,
       categoria: categoria || null,
+      tipo_otro: categoria === "otro" ? tipoOtro : null,
       costos,
       que_llevar: queLlevar || null,
       es_privada: esPrivada,

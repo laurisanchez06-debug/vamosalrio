@@ -71,8 +71,21 @@ export const CATEGORIAS: { value: string; label: string }[] = [
   { value: "playa_isla", label: "Playa / isla" },
   { value: "asado_isla", label: "Asado en isla" },
   { value: "deportes_nauticos", label: "Deportes náuticos" },
+  { value: "campamento", label: "Campamento" },
+  { value: "otro", label: "Otro" },
 ];
 
 export const CATEGORIA_LABEL: Record<string, string> = Object.fromEntries(
   CATEGORIAS.map((c) => [c.value, c.label]),
 );
+
+// Texto a mostrar para el tipo de salida. Para 'otro', usa el texto libre
+// que cargó el host (tipo_otro); si falta, cae a "Otro".
+export function categoriaLabel(
+  categoria: string | null | undefined,
+  tipoOtro?: string | null,
+): string | null {
+  if (!categoria) return null;
+  if (categoria === "otro") return tipoOtro?.trim() || "Otro";
+  return CATEGORIA_LABEL[categoria] ?? categoria;
+}

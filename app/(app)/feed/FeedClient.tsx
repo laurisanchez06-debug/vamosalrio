@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   CATEGORIAS,
-  CATEGORIA_LABEL,
+  categoriaLabel,
   formatFechaCorta,
   formatPesos,
 } from "@/lib/format";
@@ -31,6 +31,7 @@ export type SalidaFeed = {
   participantes_minimos: number | null;
   transporte: string;
   categoria: string | null;
+  tipo_otro: string | null;
   costos: Costo[] | null;
   estado: string;
   host_id: string;
@@ -502,9 +503,7 @@ function SalidaCard({
   }
 
   const reputacion = Number(host?.reputacion_promedio ?? 0);
-  const categoriaLabel = salida.categoria
-    ? CATEGORIA_LABEL[salida.categoria] ?? salida.categoria
-    : null;
+  const tipoLabel = categoriaLabel(salida.categoria, salida.tipo_otro);
 
   return (
     <Link
@@ -544,9 +543,9 @@ function SalidaCard({
 
       {/* Fila 2: badge tipo + título */}
       <div className="mt-2 flex items-baseline gap-2">
-        {categoriaLabel ? (
-          <span className="inline-flex shrink-0 items-center self-center rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
-            {categoriaLabel}
+        {tipoLabel ? (
+          <span className="inline-flex max-w-[55%] shrink-0 items-center self-center truncate rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
+            {tipoLabel}
           </span>
         ) : null}
         <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">

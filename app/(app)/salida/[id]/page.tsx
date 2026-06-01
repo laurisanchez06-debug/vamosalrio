@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
-  CATEGORIA_LABEL,
+  categoriaLabel,
   TRANSPORTE_LABEL,
   formatFechaCorta,
   formatFechaLarga,
@@ -105,7 +105,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, costos, que_llevar, estado, es_privada, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -565,7 +565,7 @@ export default async function SalidaDetallePage({
           </span>
           {salida!.categoria ? (
             <span className="inline-flex items-center rounded-full bg-rio/10 px-3 py-1 text-xs font-medium text-rio">
-              {CATEGORIA_LABEL[salida!.categoria] ?? salida!.categoria}
+              {categoriaLabel(salida!.categoria, salida!.tipo_otro)}
             </span>
           ) : null}
           {salida!.es_privada ? (
