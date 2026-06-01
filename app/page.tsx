@@ -3,28 +3,17 @@ import Link from "next/link";
 
 /* ── Marca ──────────────────────────────────────────────────────────────── */
 
-function Logo({ tono = "noche" }: { tono?: "noche" | "crema" }) {
-  const text = tono === "crema" ? "text-crema" : "text-noche";
+function Logo() {
+  // Mismo logo de marca que el footer (/logo.png).
   return (
-    <span className="flex items-center gap-2">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-rio text-crema shadow-sm">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 14c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" />
-          <path d="M3 18c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" />
-        </svg>
-      </span>
-      <span className={`text-lg font-bold tracking-tight ${text}`}>
-        vamosalrio
-      </span>
-    </span>
+    <Image
+      src="/logo.png"
+      alt="vamosalrio"
+      width={120}
+      height={110}
+      priority
+      className="h-12 w-auto"
+    />
   );
 }
 
@@ -99,7 +88,7 @@ const CONFIANZA = [
   {
     titulo: "Perfiles reales",
     texto:
-      "Foto, presentación e Instagram. Mirás quién es cada uno antes de zarpar.",
+      "Foto, presentación e Instagram. Mirás quién es cada uno antes de salir.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <circle cx="12" cy="8" r="4" />
@@ -174,7 +163,7 @@ export default function LandingPage() {
 
         <div className="mx-auto max-w-5xl px-6 pb-28 pt-16 sm:pb-36 sm:pt-20">
           <header className="flex items-center justify-between gap-4">
-            <Logo tono="crema" />
+            <Logo />
             <Link
               href="/login"
               className="text-sm font-semibold text-crema/90 transition hover:text-crema"
@@ -186,7 +175,7 @@ export default function LandingPage() {
           <div className="mt-16 max-w-2xl sm:mt-24">
             <span className="inline-flex items-center gap-2 rounded-full bg-crema/15 px-3 py-1 text-xs font-medium text-crema ring-1 ring-inset ring-crema/20 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-arena" />
-              Verano · Salidas al río
+              Salidas al río · todo el año
             </span>
 
             <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
@@ -194,9 +183,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-crema/85 sm:text-xl">
-              Salidas al río con gente que ya sabés quién es. Abrís una salida
-              o te sumás a la de otro, ves quién va antes de zarpar, y se
-              califican después.{" "}
+              Un paseo en lancha, un día de playa, pesca o kayak — salidas al
+              río con gente que ya sabés quién es. Armás la tuya o te sumás a la
+              de otro, ves quién va antes de salir, y se califican después.{" "}
               <span className="font-semibold text-crema">
                 Sin grupo de WhatsApp.
               </span>
@@ -216,16 +205,6 @@ export default function LandingPage() {
                 Explorar salidas
               </Link>
             </div>
-
-            <p className="mt-5 text-sm text-crema/75">
-              ¿Ya tenés cuenta?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-crema underline-offset-2 hover:underline"
-              >
-                Iniciá sesión →
-              </Link>
-            </p>
           </div>
         </div>
 
@@ -239,18 +218,16 @@ export default function LandingPage() {
             El problema de siempre
           </span>
           <h2 className="mt-4 text-balance text-3xl font-bold leading-tight tracking-tight text-noche sm:text-5xl">
-            Se viene el finde soleado. Querés estar en el agua.
+            Se viene el finde y querés ir al río.
           </h2>
-          <div className="mt-6 grid gap-5 text-pretty text-lg leading-relaxed text-tinta/70 sm:grid-cols-2">
+          <div className="mt-6 max-w-3xl text-pretty text-lg leading-relaxed text-tinta/70">
             <p>
-              Coordinar con el grupo es un caos, no siempre hay alguien con
-              lancha, y nunca sabés bien con quién vas a terminar.
-            </p>
-            <p>
+              Coordinar es un quilombo: los grupos de WhatsApp se pierden, los
+              planes se caen, y nunca sabés bien con quién vas a terminar.{" "}
               <span className="font-semibold text-tinta">
-                Vamosalrio te conecta con tripulación
+                Te conectamos con la gente antes de salir
               </span>{" "}
-              antes de zarpar.
+              — en lancha, a la playa, de pesca o de camping.
             </p>
           </div>
         </div>
