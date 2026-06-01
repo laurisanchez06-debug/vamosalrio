@@ -1,8 +1,21 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { pinIcon } from "./MapPin";
+
+// Leaflet a veces calcula tamaño 0 cuando el contenedor recién aparece
+// (carga dinámica / dentro de una tab) y no pinta los tiles hasta un resize.
+// Forzamos un recálculo apenas monta el mapa.
+function InvalidateOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 0);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
 
 export default function MapViewInner({ lat, lng }: { lat: number; lng: number }) {
   return (
@@ -20,6 +33,7 @@ export default function MapViewInner({ lat, lng }: { lat: number; lng: number })
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Marker position={[lat, lng]} icon={pinIcon} />
+        <InvalidateOnMount />
       </MapContainer>
     </div>
   );

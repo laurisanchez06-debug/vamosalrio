@@ -19,6 +19,15 @@ export default function SalidaTabs({
 }) {
   const [tab, setTab] = useState<TabKey>("info");
 
+  function cambiarTab(key: TabKey) {
+    setTab(key);
+    // Los paneles quedan montados (display:none); al volver a mostrar uno con
+    // un mapa Leaflet, un resize lo obliga a repintar los tiles.
+    if (typeof window !== "undefined") {
+      requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+    }
+  }
+
   const TABS: { key: TabKey; label: string; badge?: number }[] = [
     { key: "info", label: "Info" },
     { key: "tripulacion", label: "Tripulación", badge: pendientesCount },
@@ -37,7 +46,7 @@ export default function SalidaTabs({
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setTab(t.key)}
+                onClick={() => cambiarTab(t.key)}
                 aria-current={active ? "page" : undefined}
                 className={`relative shrink-0 px-3 py-3 text-sm font-semibold transition ${
                   active ? "text-rio" : "text-tinta/50"
