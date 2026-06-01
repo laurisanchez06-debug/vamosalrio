@@ -8,6 +8,7 @@ type Item = {
   label: string;
   match: (path: string) => boolean;
   icon: (active: boolean) => React.ReactNode;
+  badgeKey?: "solicitudes";
 };
 
 const items: Item[] = [
@@ -49,6 +50,7 @@ const items: Item[] = [
   {
     href: "/mis-salidas",
     label: "Mis salidas",
+    badgeKey: "solicitudes",
     match: (p) => p.startsWith("/mis-salidas"),
     icon: (active) => (
       <svg
@@ -84,7 +86,11 @@ const items: Item[] = [
   },
 ];
 
-export default function BottomNav() {
+export default function BottomNav({
+  solicitudesPendientes = 0,
+}: {
+  solicitudesPendientes?: number;
+}) {
   const pathname = usePathname() ?? "";
 
   return (
@@ -95,13 +101,25 @@ export default function BottomNav() {
       <ul className="mx-auto flex max-w-md items-stretch justify-around">
         {items.map((item) => {
           const active = item.match(pathname);
+          const badge =
+            item.badgeKey === "solicitudes" ? solicitudesPendientes : 0;
           return (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
                 className="flex flex-col items-center justify-center gap-1 py-2 text-[11px]"
               >
-                {item.icon(active)}
+                <span className="relative">
+                  {item.icon(active)}
+                  {badge > 0 ? (
+                    <span
+                      aria-label={`${badge} solicitudes pendientes`}
+                      className="absolute -right-2 -top-1.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white"
+                    >
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  ) : null}
+                </span>
                 <span
                   className={`leading-tight ${
                     active ? "font-semibold text-rio" : "text-tinta/60"
