@@ -72,6 +72,10 @@ export default function NuevaSalidaForm() {
   const [descripcion, setDescripcion] = useState("");
   const [queLlevar, setQueLlevar] = useState("");
   const [esPrivada, setEsPrivada] = useState(false);
+  const [cierreOpcion, setCierreOpcion] = useState<
+    "inicio" | "1d" | "2d" | "3d" | "custom"
+  >("inicio");
+  const [cierreCustom, setCierreCustom] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -83,6 +87,21 @@ export default function NuevaSalidaForm() {
   const porPersona = cupos > 0 ? Math.ceil(total / cupos) : 0;
   // Mínimo efectivo (clampeado a cupos por si bajaron los cupos después).
   const minimoView = minimo != null ? Math.min(minimo, cupos) : null;
+
+  // Cierre de inscripción → ISO (o "" para null = cierra al empezar la salida).
+  function calcularCierreISO(): string {
+    if (cierreOpcion === "inicio") return "";
+    if (cierreOpcion === "custom") {
+      if (!cierreCustom) return "";
+      const d = new Date(cierreCustom);
+      return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+    }
+    if (!fechaHora) return "";
+    const f = new Date(fechaHora);
+    if (Number.isNaN(f.getTime())) return "";
+    const dias = cierreOpcion === "1d" ? 1 : cierreOpcion === "2d" ? 2 : 3;
+    return new Date(f.getTime() - dias * 86_400_000).toISOString();
+  }
 
   const transporteLabel =
     transporte === "otro"
@@ -120,7 +139,16 @@ export default function NuevaSalidaForm() {
       if (Number.isNaN(new Date(fechaHora).getTime()))
         return "La fecha no es válida.";
     }
-    if (n === 4 && !titulo.trim()) return "Ponele un título a la salida.";
+    if (n === 4) {
+      if (!titulo.trim()) return "Ponele un título a la salida.";
+      if (cierreOpcion === "custom") {
+        if (!cierreCustom) return "Elegí cuándo cierra la inscripción.";
+        const c = new Date(cierreCustom);
+        if (Number.isNaN(c.getTime())) return "La fecha de cierre no es válida.";
+        if (fechaHora && c.getTime() >= new Date(fechaHora).getTime())
+          return "El cierre tiene que ser antes del inicio de la salida.";
+      }
+    }
     return null;
   }
 
@@ -167,6 +195,7 @@ export default function NuevaSalidaForm() {
     fd.set("tipo_otro", categoria === "otro" ? tipoOtro.trim() : "");
     fd.set("que_llevar", queLlevar);
     fd.set("es_privada", esPrivada ? "1" : "");
+    fd.set("cierre_inscripcion_iso", calcularCierreISO());
     fd.set("punto_encuentro_lat", lat != null ? String(lat) : "");
     fd.set("punto_encuentro_lng", lng != null ? String(lng) : "");
     fd.set(
@@ -472,6 +501,44 @@ export default function NuevaSalidaForm() {
               </p>
             </div>
 
+            {/* Cierre de inscripción */}
+            <div>
+              <label
+                htmlFor="cierre_opcion"
+                className="mb-1 block text-sm font-medium text-noche"
+              >
+                ¿Hasta cuándo se pueden sumar?
+              </label>
+              <select
+                id="cierre_opcion"
+                value={cierreOpcion}
+                onChange={(e) =>
+                  setCierreOpcion(
+                    e.target.value as typeof cierreOpcion,
+                  )
+                }
+                className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+              >
+                <option value="inicio">Hasta que empiece la salida</option>
+                <option value="1d">1 día antes</option>
+                <option value="2d">2 días antes</option>
+                <option value="3d">3 días antes</option>
+                <option value="custom">Fecha y hora específica</option>
+              </select>
+              {cierreOpcion === "custom" ? (
+                <input
+                  type="datetime-local"
+                  value={cierreCustom}
+                  max={fechaHora || undefined}
+                  onChange={(e) => setCierreCustom(e.target.value)}
+                  className="mt-2 block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+                />
+              ) : null}
+              <p className="mt-1 text-xs text-tinta/50">
+                Después de esta fecha nadie más puede pedir sumarse.
+              </p>
+            </div>
+
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-noche">
@@ -690,6 +757,29 @@ export default function NuevaSalidaForm() {
                 esPrivada
                   ? "🔒 Privada · solo por link"
                   : "Pública · aparece en el feed"
+              }
+              onEdit={() => setStep(4)}
+            />
+            <ResumenRow
+              label="Cierre inscripción"
+              value={
+                cierreOpcion === "inicio"
+                  ? "Hasta que empiece la salida"
+                  : cierreOpcion === "custom"
+                    ? cierreCustom
+                      ? new Date(cierreCustom).toLocaleString("es-AR", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"
+                    : cierreOpcion === "1d"
+                      ? "1 día antes"
+                      : cierreOpcion === "2d"
+                        ? "2 días antes"
+                        : "3 días antes"
               }
               onEdit={() => setStep(4)}
             />

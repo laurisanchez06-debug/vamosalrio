@@ -9,6 +9,7 @@ import {
   formatPesos,
 } from "@/lib/format";
 import CapitanBadge from "@/components/CapitanBadge";
+import CierreCountdown from "@/components/CierreCountdown";
 
 type Host = {
   nombre: string | null;
@@ -23,6 +24,7 @@ export type SalidaFeed = {
   id: string;
   titulo: string;
   fecha_hora: string;
+  cierre_inscripcion: string | null;
   punto_encuentro_texto: string | null;
   punto_encuentro_lat: number | null;
   punto_encuentro_lng: number | null;
@@ -593,6 +595,11 @@ function SalidaCard({
           <span className="shrink-0 text-xs text-tinta/50">Gratis</span>
         )}
       </div>
+
+      <CierreCountdown
+        cierre={salida.cierre_inscripcion ?? salida.fecha_hora}
+        className="mt-1.5 text-[11px] font-medium"
+      />
     </Link>
   );
 }

@@ -37,6 +37,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const tipoOtro = String(formData.get("tipo_otro") ?? "").trim().slice(0, 60);
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
   const esPrivada = String(formData.get("es_privada") ?? "").trim() === "1";
+  const cierreISO = String(formData.get("cierre_inscripcion_iso") ?? "").trim();
   const latRaw = String(formData.get("punto_encuentro_lat") ?? "").trim();
   const lngRaw = String(formData.get("punto_encuentro_lng") ?? "").trim();
   const lat = latRaw ? Number(latRaw) : null;
@@ -85,6 +86,21 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
     return { error: "La fecha no es válida." };
   }
 
+  // Cierre de inscripción (opcional). null = cierra al empezar la salida.
+  let cierreInscripcion: string | null = null;
+  if (cierreISO) {
+    const c = new Date(cierreISO);
+    if (Number.isNaN(c.getTime())) {
+      return { error: "La fecha de cierre no es válida." };
+    }
+    if (c.getTime() >= fecha.getTime()) {
+      return {
+        error: "El cierre de inscripción tiene que ser antes del inicio de la salida.",
+      };
+    }
+    cierreInscripcion = c.toISOString();
+  }
+
   let costos: Array<{ concepto: string; monto: number }> = [];
   try {
     const parsed = JSON.parse(costosJson);
@@ -120,6 +136,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       costos,
       que_llevar: queLlevar || null,
       es_privada: esPrivada,
+      cierre_inscripcion: cierreInscripcion,
     })
     .select("id")
     .single();

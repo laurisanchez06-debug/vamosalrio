@@ -50,7 +50,9 @@ export async function solicitarParticipacionAction(
 
   const { data: salida, error: salidaError } = await supabase
     .from("salidas")
-    .select("host_id, cupos_total, cupos_ocupados, estado, titulo")
+    .select(
+      "host_id, cupos_total, cupos_ocupados, estado, titulo, fecha_hora, cierre_inscripcion",
+    )
     .eq("id", salidaId)
     .maybeSingle();
 
@@ -58,6 +60,14 @@ export async function solicitarParticipacionAction(
   if (salida.host_id === user.id) return { error: "Sos el host de esta salida." };
   if (salida.estado !== "abierta") return { error: "La salida ya no está abierta." };
   if ((salida.cupos_ocupados ?? 0) >= salida.cupos_total) return { error: "No quedan cupos." };
+
+  // Cierre de inscripción: cierre_inscripcion ?? fecha_hora.
+  const cierreEfectivo = new Date(
+    salida.cierre_inscripcion ?? salida.fecha_hora,
+  ).getTime();
+  if (Number.isFinite(cierreEfectivo) && Date.now() >= cierreEfectivo) {
+    return { error: "La inscripción ya está cerrada." };
+  }
 
   const mensajeLimpio = (mensaje ?? "").trim().slice(0, 300);
 

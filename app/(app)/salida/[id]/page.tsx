@@ -19,6 +19,7 @@ import AportesSection from "./AportesSection";
 import SalidaTabs from "./SalidaTabs";
 import RangoBadge from "@/components/RangoBadge";
 import CuorumBar from "@/components/CuorumBar";
+import CierreCountdown from "@/components/CierreCountdown";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -105,7 +106,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cierre_inscripcion, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -219,6 +220,11 @@ export default async function SalidaDetallePage({
     salida!.estado === "finalizada" ||
     new Date(salida!.fecha_hora).getTime() < Date.now();
   const isCancelada = salida!.estado === "cancelada";
+
+  // Cierre de inscripción: cierre_inscripcion ?? fecha_hora.
+  const cierreEfectivoISO = salida!.cierre_inscripcion ?? salida!.fecha_hora;
+  const inscripcionCerrada =
+    new Date(cierreEfectivoISO).getTime() <= Date.now();
 
   // ¿Puede calificar / ya calificó?
   const usuarioParticipo =
@@ -679,6 +685,16 @@ export default async function SalidaDetallePage({
             Sumate a la tripulación
           </Link>
         </div>
+      ) : inscripcionCerrada && !estadoParticipacion ? (
+        <div className="mt-6">
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-6 text-base font-semibold text-tinta/50"
+          >
+            Inscripción cerrada
+          </button>
+        </div>
       ) : cuposCompletos && !estadoParticipacion ? (
         <div className="mt-6">
           <button
@@ -697,6 +713,14 @@ export default async function SalidaDetallePage({
           />
         </div>
       )}
+
+      {/* Cuenta regresiva del cierre de inscripción (salida activa) */}
+      {!isFinalizadaOPasada && !isCancelada ? (
+        <CierreCountdown
+          cierre={cierreEfectivoISO}
+          className="mt-3 w-full justify-center text-sm font-medium"
+        />
+      ) : null}
 
       {/* ─── Tabs ─── */}
       <SalidaTabs
