@@ -2,7 +2,7 @@
   "name": "vamosalrio",
   "short_name": "vamosalrio",
   "description": "Salidas al río con gente que ya sabés quién es.",
-  "start_url": "/",
+  "start_url": "/feed",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FBFAF7",
