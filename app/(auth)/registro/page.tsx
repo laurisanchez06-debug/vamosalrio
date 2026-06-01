@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthCard from "@/components/AuthCard";
+import { GENEROS } from "@/lib/format";
 import { signUpAction } from "./actions";
 
 export default function RegistroPage({
@@ -63,6 +64,50 @@ export default function RegistroPage({
             placeholder="Mínimo 6 caracteres"
             className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
           />
+        </div>
+
+        <div>
+          <label
+            htmlFor="fecha_nacimiento"
+            className="mb-1 block text-sm font-medium text-noche"
+          >
+            Fecha de nacimiento
+          </label>
+          <input
+            id="fecha_nacimiento"
+            name="fecha_nacimiento"
+            type="date"
+            required
+            className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+          />
+          <p className="mt-1 text-xs text-tinta/50">
+            Tenés que ser mayor de 18 años.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="genero"
+            className="mb-1 block text-sm font-medium text-noche"
+          >
+            Género
+          </label>
+          <select
+            id="genero"
+            name="genero"
+            required
+            defaultValue=""
+            className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+          >
+            <option value="" disabled>
+              Elegí una opción
+            </option>
+            {GENEROS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
         </div>
 
         {searchParams.error ? (

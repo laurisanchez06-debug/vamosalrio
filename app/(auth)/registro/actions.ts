@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { GENEROS, calcularEdad } from "@/lib/format";
 
 function safeRedirect(value: FormDataEntryValue | null) {
   const s = String(value ?? "").trim();
@@ -11,6 +13,8 @@ function safeRedirect(value: FormDataEntryValue | null) {
 export async function signUpAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const fechaNacimiento = String(formData.get("fecha_nacimiento") ?? "").trim();
+  const genero = String(formData.get("genero") ?? "").trim();
   const redirectTo = safeRedirect(formData.get("redirect"));
   const qs = redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : "";
 
@@ -25,10 +29,29 @@ export async function signUpAction(formData: FormData) {
     );
   }
 
+  // Edad y género obligatorios + barrera +18.
+  const edad = calcularEdad(fechaNacimiento);
+  if (!fechaNacimiento || edad == null) {
+    redirect(
+      `/registro?error=${encodeURIComponent("Completá tu fecha de nacimiento.")}${qs}`,
+    );
+  }
+  if (edad! < 18) {
+    redirect(
+      `/registro?error=${encodeURIComponent("Tenés que ser mayor de 18 años para usar vamosalrio.")}${qs}`,
+    );
+  }
+  if (!genero || !GENEROS.includes(genero as (typeof GENEROS)[number])) {
+    redirect(
+      `/registro?error=${encodeURIComponent("Elegí tu género.")}${qs}`,
+    );
+  }
+
   let errorMessage: string | null = null;
+  let newUserId: string | null = null;
   try {
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -36,6 +59,7 @@ export async function signUpAction(formData: FormData) {
       },
     });
     errorMessage = error?.message ?? null;
+    newUserId = data?.user?.id ?? null;
   } catch (err) {
     // No dejamos que una excepción (ej. URL/clave de Supabase mal cargada en
     // el deploy) se convierta en un 500 sin mensaje al crear cuenta.
@@ -48,6 +72,20 @@ export async function signUpAction(formData: FormData) {
 
   if (errorMessage) {
     redirect(`/registro?error=${encodeURIComponent(errorMessage)}${qs}`);
+  }
+
+  // Persistimos edad/género con service_role (la fila de profiles la crea el
+  // trigger de signup; el update no depende de que ya haya sesión).
+  if (newUserId) {
+    try {
+      const admin = createAdminClient();
+      await admin
+        .from("profiles")
+        .update({ fecha_nacimiento: fechaNacimiento, genero })
+        .eq("id", newUserId);
+    } catch (err) {
+      console.error("[signUpAction] no se pudo guardar edad/género:", err);
+    }
   }
 
   redirect(

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularEsCapitan } from "@/lib/capitan";
 import { calcularRangoHost, calcularRangoTripulante } from "@/lib/rangos";
+import { calcularEdad, rangoEdadLabel } from "@/lib/format";
 import {
   emailNuevaSolicitud,
   emailSolicitudAceptada,
@@ -51,7 +52,7 @@ export async function solicitarParticipacionAction(
   const { data: salida, error: salidaError } = await supabase
     .from("salidas")
     .select(
-      "host_id, cupos_total, cupos_ocupados, estado, titulo, fecha_hora, cierre_inscripcion",
+      "host_id, cupos_total, cupos_ocupados, estado, titulo, fecha_hora, cierre_inscripcion, edad_min, edad_max",
     )
     .eq("id", salidaId)
     .maybeSingle();
@@ -67,6 +68,24 @@ export async function solicitarParticipacionAction(
   ).getTime();
   if (Number.isFinite(cierreEfectivo) && Date.now() >= cierreEfectivo) {
     return { error: "La inscripción ya está cerrada." };
+  }
+
+  // Rango de edad: la edad del usuario tiene que caer dentro del rango.
+  if (salida.edad_min != null || salida.edad_max != null) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("fecha_nacimiento")
+      .eq("id", user.id)
+      .maybeSingle();
+    const edad = calcularEdad(prof?.fecha_nacimiento);
+    const rango = rangoEdadLabel(salida.edad_min, salida.edad_max);
+    if (
+      edad == null ||
+      (salida.edad_min != null && edad < salida.edad_min) ||
+      (salida.edad_max != null && edad > salida.edad_max)
+    ) {
+      return { error: `Esta salida es para personas ${rango}.` };
+    }
   }
 
   const mensajeLimpio = (mensaje ?? "").trim().slice(0, 300);

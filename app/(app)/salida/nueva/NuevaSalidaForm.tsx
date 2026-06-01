@@ -76,6 +76,9 @@ export default function NuevaSalidaForm() {
     "inicio" | "1d" | "2d" | "3d" | "custom"
   >("inicio");
   const [cierreCustom, setCierreCustom] = useState("");
+  const [sinRestriccionEdad, setSinRestriccionEdad] = useState(true);
+  const [edadMin, setEdadMin] = useState(18);
+  const [edadMax, setEdadMax] = useState(65);
 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -148,6 +151,11 @@ export default function NuevaSalidaForm() {
         if (fechaHora && c.getTime() >= new Date(fechaHora).getTime())
           return "El cierre tiene que ser antes del inicio de la salida.";
       }
+      if (!sinRestriccionEdad) {
+        if (edadMin < 18) return "La edad mínima tiene que ser 18 o más.";
+        if (edadMin > edadMax)
+          return "La edad mínima no puede ser mayor a la máxima.";
+      }
     }
     return null;
   }
@@ -196,6 +204,8 @@ export default function NuevaSalidaForm() {
     fd.set("que_llevar", queLlevar);
     fd.set("es_privada", esPrivada ? "1" : "");
     fd.set("cierre_inscripcion_iso", calcularCierreISO());
+    fd.set("edad_min", sinRestriccionEdad ? "" : String(edadMin));
+    fd.set("edad_max", sinRestriccionEdad ? "" : String(edadMax));
     fd.set("punto_encuentro_lat", lat != null ? String(lat) : "");
     fd.set("punto_encuentro_lng", lng != null ? String(lng) : "");
     fd.set(
@@ -539,6 +549,58 @@ export default function NuevaSalidaForm() {
               </p>
             </div>
 
+            {/* Rango de edad */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-noche">
+                Rango de edad{" "}
+                <span className="font-normal text-tinta/40">(opcional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setSinRestriccionEdad((v) => !v)}
+                aria-pressed={sinRestriccionEdad}
+                className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-4 text-left transition ${
+                  sinRestriccionEdad
+                    ? "border-rio bg-rio/10"
+                    : "border-tinta/15 bg-white"
+                }`}
+              >
+                <span className="text-sm font-medium text-noche">
+                  Sin restricción de edad
+                </span>
+                <span
+                  className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition ${
+                    sinRestriccionEdad ? "bg-rio" : "bg-tinta/20"
+                  }`}
+                >
+                  <span
+                    className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      sinRestriccionEdad ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </span>
+              </button>
+
+              {!sinRestriccionEdad ? (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <EdadStepper
+                    label="Desde"
+                    value={edadMin}
+                    min={18}
+                    max={edadMax}
+                    onChange={setEdadMin}
+                  />
+                  <EdadStepper
+                    label="Hasta"
+                    value={edadMax}
+                    min={Math.max(18, edadMin)}
+                    max={99}
+                    onChange={setEdadMax}
+                  />
+                </div>
+              ) : null}
+            </div>
+
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-noche">
@@ -783,6 +845,15 @@ export default function NuevaSalidaForm() {
               }
               onEdit={() => setStep(4)}
             />
+            <ResumenRow
+              label="Edad"
+              value={
+                sinRestriccionEdad
+                  ? "Sin restricción"
+                  : `De ${edadMin} a ${edadMax} años`
+              }
+              onEdit={() => setStep(4)}
+            />
             {descripcion.trim() ? (
               <ResumenRow
                 label="Descripción"
@@ -841,6 +912,49 @@ export default function NuevaSalidaForm() {
             {pending ? "Publicando…" : "Publicar salida"}
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+function EdadStepper({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-1 text-[11px] uppercase tracking-wide text-tinta/50">
+        {label}
+      </div>
+      <div className="flex items-center justify-between rounded-2xl border border-tinta/15 bg-white px-3 py-2">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className="grid h-9 w-9 place-items-center rounded-full bg-crema text-lg font-semibold text-noche disabled:opacity-40"
+          aria-label={`Bajar ${label.toLowerCase()}`}
+        >
+          −
+        </button>
+        <span className="text-xl font-bold text-noche">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          className="grid h-9 w-9 place-items-center rounded-full bg-rio text-lg font-semibold text-crema disabled:opacity-40"
+          aria-label={`Subir ${label.toLowerCase()}`}
+        >
+          +
+        </button>
       </div>
     </div>
   );

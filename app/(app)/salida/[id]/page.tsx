@@ -7,6 +7,8 @@ import {
   formatFechaCorta,
   formatFechaLarga,
   formatPesos,
+  calcularEdad,
+  rangoEdadLabel,
 } from "@/lib/format";
 import AutoToast from "@/components/AutoToast";
 import MapView from "@/components/map/MapView";
@@ -106,7 +108,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cierre_inscripcion, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cierre_inscripcion, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, edad_min, edad_max, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -143,6 +145,24 @@ export default async function SalidaDetallePage({
       .eq("user_id", user.id)
       .maybeSingle();
     estadoParticipacion = (miPart?.estado as typeof estadoParticipacion) ?? null;
+  }
+
+  // Rango de edad de la salida: ¿el usuario actual queda afuera?
+  const tieneRangoEdad =
+    salida!.edad_min != null || salida!.edad_max != null;
+  const rangoEdadTexto = rangoEdadLabel(salida!.edad_min, salida!.edad_max);
+  let fueraDeRangoEdad = false;
+  if (user && !isHost && tieneRangoEdad) {
+    const { data: miPerfil } = await supabase
+      .from("profiles")
+      .select("fecha_nacimiento")
+      .eq("id", user.id)
+      .maybeSingle();
+    const edadUsuario = calcularEdad(miPerfil?.fecha_nacimiento);
+    fueraDeRangoEdad =
+      edadUsuario == null ||
+      (salida!.edad_min != null && edadUsuario < salida!.edad_min) ||
+      (salida!.edad_max != null && edadUsuario > salida!.edad_max);
   }
 
   // Confirmados (con reputación para mostrar la lista al host también).
@@ -391,6 +411,17 @@ export default async function SalidaDetallePage({
           </div>
         </div>
       </div>
+
+      {tieneRangoEdad ? (
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide text-tinta/40">
+            Edad
+          </div>
+          <div className="mt-1 text-base font-semibold text-noche">
+            Para personas {rangoEdadTexto}
+          </div>
+        </div>
+      ) : null}
 
       {costos.length > 0 ? (
         <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -693,6 +724,16 @@ export default async function SalidaDetallePage({
             className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-6 text-base font-semibold text-tinta/50"
           >
             Inscripción cerrada
+          </button>
+        </div>
+      ) : fueraDeRangoEdad && !estadoParticipacion ? (
+        <div className="mt-6">
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-12 w-full cursor-default items-center justify-center rounded-2xl bg-tinta/10 px-5 text-center text-sm font-semibold text-tinta/50"
+          >
+            Esta salida es para personas {rangoEdadTexto}.
           </button>
         </div>
       ) : cuposCompletos && !estadoParticipacion ? (

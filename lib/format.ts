@@ -55,6 +55,33 @@ export function formatPesos(n: number) {
   }).format(n || 0);
 }
 
+export const GENEROS = ["Mujer", "Varón", "Otro", "Prefiero no decir"] as const;
+
+// Edad (en años cumplidos) a partir de la fecha de nacimiento (YYYY-MM-DD).
+export function calcularEdad(
+  fechaNacimiento: string | null | undefined,
+): number | null {
+  if (!fechaNacimiento) return null;
+  const d = new Date(fechaNacimiento);
+  if (Number.isNaN(d.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - d.getFullYear();
+  const m = hoy.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < d.getDate())) edad--;
+  return edad;
+}
+
+// Texto del rango de edad de una salida ("de X a Y años", etc.). null si no hay.
+export function rangoEdadLabel(
+  edadMin: number | null | undefined,
+  edadMax: number | null | undefined,
+): string | null {
+  if (edadMin != null && edadMax != null) return `de ${edadMin} a ${edadMax} años`;
+  if (edadMin != null) return `de ${edadMin} años o más`;
+  if (edadMax != null) return `hasta ${edadMax} años`;
+  return null;
+}
+
 export const TRANSPORTE_LABEL: Record<string, string> = {
   lancha_publica: "Lancha pública",
   lancha_privada: "Lancha privada",

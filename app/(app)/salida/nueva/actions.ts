@@ -38,6 +38,8 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
   const esPrivada = String(formData.get("es_privada") ?? "").trim() === "1";
   const cierreISO = String(formData.get("cierre_inscripcion_iso") ?? "").trim();
+  const edadMinRaw = String(formData.get("edad_min") ?? "").trim();
+  const edadMaxRaw = String(formData.get("edad_max") ?? "").trim();
   const latRaw = String(formData.get("punto_encuentro_lat") ?? "").trim();
   const lngRaw = String(formData.get("punto_encuentro_lng") ?? "").trim();
   const lat = latRaw ? Number(latRaw) : null;
@@ -101,6 +103,25 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
     cierreInscripcion = c.toISOString();
   }
 
+  // Rango de edad (opcional). Si viene uno, vienen ambos desde el wizard.
+  let edadMin: number | null = null;
+  let edadMax: number | null = null;
+  if (edadMinRaw || edadMaxRaw) {
+    const min = Number(edadMinRaw);
+    const max = Number(edadMaxRaw);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      return { error: "El rango de edad no es válido." };
+    }
+    if (min < 18) {
+      return { error: "La edad mínima tiene que ser 18 o más." };
+    }
+    if (min > max) {
+      return { error: "La edad mínima no puede ser mayor a la máxima." };
+    }
+    edadMin = Math.round(min);
+    edadMax = Math.round(max);
+  }
+
   let costos: Array<{ concepto: string; monto: number }> = [];
   try {
     const parsed = JSON.parse(costosJson);
@@ -137,6 +158,8 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       que_llevar: queLlevar || null,
       es_privada: esPrivada,
       cierre_inscripcion: cierreInscripcion,
+      edad_min: edadMin,
+      edad_max: edadMax,
     })
     .select("id")
     .single();

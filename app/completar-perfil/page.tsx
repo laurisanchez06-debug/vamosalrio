@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AuthCard from "@/components/AuthCard";
+import { GENEROS } from "@/lib/format";
 import { completarPerfilAction } from "./actions";
 
 const INTERESES = [
@@ -28,7 +29,9 @@ export default async function CompletarPerfilPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nombre, bio, instagram_handle, foto_url, intereses")
+    .select(
+      "nombre, bio, instagram_handle, foto_url, intereses, fecha_nacimiento, genero",
+    )
     .eq("id", user!.id)
     .maybeSingle();
 
@@ -64,6 +67,51 @@ export default async function CompletarPerfilPage({
             placeholder="Cómo querés que te llamen"
             className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
           />
+        </div>
+
+        <div>
+          <label
+            htmlFor="fecha_nacimiento"
+            className="mb-1 block text-sm font-medium text-noche"
+          >
+            Fecha de nacimiento <span className="text-arena">*</span>
+          </label>
+          <input
+            id="fecha_nacimiento"
+            name="fecha_nacimiento"
+            type="date"
+            required
+            defaultValue={profile?.fecha_nacimiento ?? ""}
+            className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+          />
+          <p className="mt-1 text-xs text-tinta/50">
+            Tenés que ser mayor de 18 años.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="genero"
+            className="mb-1 block text-sm font-medium text-noche"
+          >
+            Género <span className="text-arena">*</span>
+          </label>
+          <select
+            id="genero"
+            name="genero"
+            required
+            defaultValue={profile?.genero ?? ""}
+            className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+          >
+            <option value="" disabled>
+              Elegí una opción
+            </option>
+            {GENEROS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

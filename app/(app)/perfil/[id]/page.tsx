@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RangoBadge from "@/components/RangoBadge";
 import ReferenciasRecibidas from "@/components/ReferenciasRecibidas";
+import { calcularEdad } from "@/lib/format";
 
 function initials(name?: string | null) {
   return (name ?? "?")
@@ -23,7 +24,7 @@ export default async function PerfilOtroPage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan, rango_host, rango_tripulante, cancelaciones_tardias",
+      "nombre, foto_url, bio, instagram_handle, reputacion_promedio, salidas_creadas, salidas_asistidas, es_capitan, rango_host, rango_tripulante, cancelaciones_tardias, fecha_nacimiento",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -31,6 +32,8 @@ export default async function PerfilOtroPage({
   if (!profile) {
     notFound();
   }
+
+  const edad = calcularEdad(profile.fecha_nacimiento);
 
   return (
     <div className="px-6 pt-10">
@@ -62,6 +65,9 @@ export default async function PerfilOtroPage({
             <RangoBadge rango={profile.rango_host} />
             <RangoBadge rango={profile.rango_tripulante} />
           </div>
+          {edad != null ? (
+            <p className="mt-1 text-sm text-tinta/60">{edad} años</p>
+          ) : null}
           {(profile.cancelaciones_tardias ?? 0) > 0 ? (
             <p className="mt-1 text-xs font-medium text-red-600">
               ⚠️ {profile.cancelaciones_tardias}{" "}

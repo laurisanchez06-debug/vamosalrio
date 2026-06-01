@@ -7,6 +7,7 @@ import {
   createAdminClient,
   ensureAvatarsBucket,
 } from "@/lib/supabase/admin";
+import { GENEROS, calcularEdad } from "@/lib/format";
 
 function clean(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -33,6 +34,8 @@ export async function completarPerfilAction(formData: FormData) {
   }
 
   const nombre = clean(formData.get("nombre"));
+  const fechaNacimiento = clean(formData.get("fecha_nacimiento"));
+  const genero = clean(formData.get("genero"));
   const bio = clean(formData.get("bio")).slice(0, 200);
   const instagram = normalizeInstagram(clean(formData.get("instagram_handle")));
   const intereses = formData
@@ -43,9 +46,31 @@ export async function completarPerfilAction(formData: FormData) {
   const redirectTo = safeRedirect(formData.get("redirect"));
   const qs = redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : "";
 
+  const errBase = redirectTo
+    ? `&redirect=${encodeURIComponent(redirectTo)}`
+    : "";
+
   if (!nombre) {
     redirect(
-      `/completar-perfil?error=${encodeURIComponent("El nombre es obligatorio.")}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ""}`,
+      `/completar-perfil?error=${encodeURIComponent("El nombre es obligatorio.")}${errBase}`,
+    );
+  }
+
+  // Edad y género obligatorios + barrera +18.
+  const edad = calcularEdad(fechaNacimiento);
+  if (!fechaNacimiento || edad == null) {
+    redirect(
+      `/completar-perfil?error=${encodeURIComponent("Completá tu fecha de nacimiento.")}${errBase}`,
+    );
+  }
+  if (edad! < 18) {
+    redirect(
+      `/completar-perfil?error=${encodeURIComponent("Tenés que ser mayor de 18 años para usar vamosalrio.")}${errBase}`,
+    );
+  }
+  if (!genero || !GENEROS.includes(genero as (typeof GENEROS)[number])) {
+    redirect(
+      `/completar-perfil?error=${encodeURIComponent("Elegí tu género.")}${errBase}`,
     );
   }
 
@@ -81,6 +106,8 @@ export async function completarPerfilAction(formData: FormData) {
     .from("profiles")
     .update({
       nombre,
+      fecha_nacimiento: fechaNacimiento,
+      genero,
       bio: bio || null,
       instagram_handle: instagram,
       intereses,
