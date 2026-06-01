@@ -110,6 +110,35 @@ export default function RegistroPage({
           </select>
         </div>
 
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            name="acepta_terminos"
+            value="1"
+            required
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-tinta/30 text-rio accent-rio focus:ring-rio"
+          />
+          <span className="text-sm leading-relaxed text-tinta/70">
+            Soy mayor de 18 años y acepto los{" "}
+            <Link
+              href="/terminos"
+              target="_blank"
+              className="font-semibold text-rio"
+            >
+              Términos y Condiciones
+            </Link>{" "}
+            y la{" "}
+            <Link
+              href="/privacidad"
+              target="_blank"
+              className="font-semibold text-rio"
+            >
+              Política de Privacidad
+            </Link>
+            .
+          </span>
+        </label>
+
         {searchParams.error ? (
           <p className="rounded-xl bg-arena/15 px-4 py-3 text-sm text-arena">
             {searchParams.error}
@@ -122,18 +151,6 @@ export default function RegistroPage({
         >
           Crear cuenta
         </button>
-
-        <p className="text-center text-xs leading-relaxed text-tinta/50">
-          Al crear cuenta aceptás los{" "}
-          <Link href="/terminos" className="font-medium text-rio">
-            Términos
-          </Link>{" "}
-          y la{" "}
-          <Link href="/privacidad" className="font-medium text-rio">
-            Política de Privacidad
-          </Link>
-          .
-        </p>
       </form>
     </AuthCard>
   );

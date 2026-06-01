@@ -485,6 +485,9 @@ export default function LandingPage() {
               <Link href="/contacto" className="hover:text-rio">
                 Contacto
               </Link>
+              <Link href="/ayuda" className="hover:text-rio">
+                Ayuda
+              </Link>
             </nav>
           </div>
           <p className="mt-6 text-xs text-tinta/40">

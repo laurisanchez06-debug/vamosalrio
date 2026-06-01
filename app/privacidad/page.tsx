@@ -4,83 +4,176 @@ import LegalShell, { Clausula } from "@/components/LegalShell";
 export const metadata: Metadata = {
   title: "Política de Privacidad — vamosalrio",
   description:
-    "Qué datos recolecta vamosalrio, para qué los usa y cómo los protege. Borrador pendiente de revisión legal.",
+    "Qué datos recolecta vamosalrio, para qué los usa y cómo los protege. Operada por Kappla SRL.",
 };
 
 export default function PrivacidadPage() {
   return (
     <LegalShell
       titulo="Política de Privacidad"
-      actualizado="Última actualización: mayo 2026"
-      borrador
+      actualizado="Última actualización: 1 de junio de 2026"
     >
-      <p className="text-pretty leading-relaxed text-tinta/75">
-        En <strong>vamosalrio</strong> (operada por Kappla SRL) cuidamos tus datos.
-        Acá te contamos qué información recolectamos, para qué la usamos y qué
-        nunca compartimos.
-      </p>
-
-      <Clausula numero={1} titulo="Qué datos recolectamos">
-        <ul className="ml-4 list-disc space-y-1.5">
-          <li>
-            <strong>Email</strong>: para crear tu cuenta, identificarte e enviarte
-            avisos relacionados con tus salidas.
-          </li>
-          <li>
-            <strong>Datos de perfil</strong>: nombre, foto, presentación, usuario de
-            Instagram (si elegís cargarlo) y tu reputación dentro de la app.
-          </li>
-          <li>
-            <strong>Intereses</strong>: las actividades que marcás (lancha, pesca,
-            kayak, etc.) para mostrarte salidas más afines.
-          </li>
-          <li>
-            <strong>Ubicación de las salidas</strong>: el punto de encuentro que define
-            el host para cada salida. Es información de la salida, no de tu
-            domicilio.
-          </li>
-        </ul>
-      </Clausula>
-
-      <Clausula numero={2} titulo="Para qué los usamos">
-        <ul className="ml-4 list-disc space-y-1.5">
-          <li>Operar la Plataforma: crear tu cuenta y mantener tu sesión.</li>
-          <li>Mostrar las salidas y conectar a hosts con participantes.</li>
-          <li>
-            Que el host pueda decidir con contexto (tu presentación e intereses).
-          </li>
-          <li>Calcular reputación a partir de las calificaciones entre usuarios.</li>
-          <li>Enviarte avisos operativos de tus salidas.</li>
-        </ul>
-      </Clausula>
-
-      <Clausula numero={3} titulo="Qué NO compartimos">
+      <Clausula numero={1} titulo="Responsable del tratamiento">
         <p>
-          <strong>No publicamos ni compartimos tu dirección exacta de domicilio.</strong>{" "}
-          Lo único visible sobre ubicación es el <strong>punto de encuentro</strong> que el
-          host decide cargar para una salida. Tu perfil (nombre, foto,
-          presentación, intereses y reputación) es visible para otros usuarios
-          dentro de la app para generar confianza; tu email no se muestra
-          públicamente.
-        </p>
-      </Clausula>
-
-      <Clausula numero={4} titulo="Dónde se guardan">
-        <p>
-          Los datos se almacenan en nuestra infraestructura de base de datos y
-          autenticación (Supabase). Aplicamos controles de acceso para que cada
-          usuario vea solo lo que le corresponde.
-        </p>
-      </Clausula>
-
-      <Clausula numero={5} titulo="Tus derechos">
-        <p>
-          Podés acceder a tus datos, corregirlos o pedir que eliminemos tu cuenta
-          escribiéndonos a{" "}
-          <a href="mailto:comercial@kapplasrl.com" className="font-medium text-rio">
+          El responsable de los datos personales es{" "}
+          <strong>Kappla SRL</strong> (CUIT 30-71451107-2), Rosario, Santa Fe,
+          Argentina. Contacto:{" "}
+          <a
+            href="mailto:comercial@kapplasrl.com"
+            className="font-semibold text-rio"
+          >
             comercial@kapplasrl.com
           </a>
           .
+        </p>
+      </Clausula>
+
+      <Clausula numero={2} titulo="Datos que recolectamos">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            <strong>Datos de registro:</strong> nombre, correo electrónico,
+            contraseña (almacenada de forma cifrada), fecha de nacimiento y
+            género.
+          </li>
+          <li>
+            <strong>Datos de perfil:</strong> foto, descripción personal, enlace
+            a redes sociales (ej. Instagram) si el Usuario decide aportarlos.
+          </li>
+          <li>
+            <strong>Datos de uso:</strong> salidas creadas o a las que se sumó,
+            mensajes en chats de salidas, calificaciones y referencias.
+          </li>
+          <li>
+            <strong>Datos de ubicación:</strong> puntos de encuentro que el
+            Usuario carga; la Plataforma no rastrea la ubicación en tiempo real
+            del dispositivo.
+          </li>
+          <li>
+            <strong>Datos técnicos:</strong> dirección IP, tipo de dispositivo y
+            datos de navegación necesarios para el funcionamiento del servicio.
+          </li>
+        </ul>
+      </Clausula>
+
+      <Clausula numero={3} titulo="Finalidad del tratamiento">
+        <p>
+          Utilizamos los datos para: operar la Plataforma y permitir la
+          coordinación entre Usuarios; mostrar perfiles a otros Usuarios; enviar
+          notificaciones operativas (solicitudes, recordatorios de salidas,
+          cambios); garantizar la seguridad y prevenir abusos; y mejorar el
+          servicio.
+        </p>
+      </Clausula>
+
+      <Clausula numero={4} titulo="Base legal">
+        <p>
+          El tratamiento se basa en el consentimiento del Usuario (Ley 25.326 de
+          Protección de Datos Personales) y en la necesidad de ejecutar la
+          relación de servicio. El Usuario presta su consentimiento al aceptar
+          esta Política durante el registro.
+        </p>
+      </Clausula>
+
+      <Clausula numero={5} titulo="Con quién compartimos los datos">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            <strong>Con otros Usuarios:</strong> el perfil público (nombre,
+            foto, descripción, reputación, edad/rango según configuración) es
+            visible para otros Usuarios, como parte esencial del servicio de
+            confianza.
+          </li>
+          <li>
+            <strong>Con proveedores de tecnología</strong> que nos prestan
+            servicios de infraestructura (alojamiento, base de datos, envío de
+            correos). Estos proveedores procesan datos por cuenta de Kappla SRL
+            bajo obligaciones de confidencialidad, y pueden alojar datos en
+            servidores ubicados fuera de Argentina.
+          </li>
+          <li>
+            <strong>Con autoridades</strong>, cuando exista obligación legal de
+            hacerlo.
+          </li>
+        </ul>
+        <p>
+          <strong>No vendemos datos personales a terceros.</strong>
+        </p>
+      </Clausula>
+
+      <Clausula numero={6} titulo="Derechos del titular de los datos">
+        <p>
+          El Usuario puede ejercer en cualquier momento sus derechos de{" "}
+          <strong>acceso, rectificación, actualización y supresión</strong> de
+          sus datos, escribiendo a{" "}
+          <a
+            href="mailto:comercial@kapplasrl.com"
+            className="font-semibold text-rio"
+          >
+            comercial@kapplasrl.com
+          </a>
+          . El titular de los datos tiene la facultad de ejercer el derecho de
+          acceso en forma gratuita a intervalos no inferiores a seis meses (art.
+          14, inc. 3, Ley 25.326).
+        </p>
+        <p>
+          La{" "}
+          <strong>
+            Agencia de Acceso a la Información Pública (AAIP)
+          </strong>
+          , órgano de control de la Ley 25.326, tiene la atribución de atender
+          denuncias y reclamos relativos al incumplimiento de las normas sobre
+          datos personales.
+        </p>
+      </Clausula>
+
+      <Clausula numero={7} titulo="Conservación">
+        <p>
+          Conservamos los datos mientras la cuenta esté activa y durante el
+          plazo necesario para cumplir obligaciones legales. El Usuario puede
+          solicitar la baja de su cuenta y la supresión de sus datos en
+          cualquier momento.
+        </p>
+      </Clausula>
+
+      <Clausula numero={8} titulo="Seguridad">
+        <p>
+          Aplicamos medidas técnicas y organizativas razonables para proteger
+          los datos (cifrado de contraseñas, control de accesos). Ningún sistema
+          es 100% infalible; el Usuario también es responsable de proteger sus
+          credenciales.
+        </p>
+      </Clausula>
+
+      <Clausula numero={9} titulo="Menores">
+        <p>
+          La Plataforma no está dirigida a menores de 18 años y no recolecta
+          datos de ellos de manera consciente. Si detectamos datos de un menor,
+          los eliminaremos.
+        </p>
+      </Clausula>
+
+      <Clausula numero={10} titulo="Cookies y tecnologías similares">
+        <p>
+          Utilizamos cookies y almacenamiento local estrictamente necesarios
+          para el funcionamiento del servicio (sesión, preferencias).
+        </p>
+      </Clausula>
+
+      <Clausula numero={11} titulo="Cambios en esta Política">
+        <p>
+          Podremos actualizar esta Política. Notificaremos los cambios
+          sustanciales a los Usuarios registrados.
+        </p>
+      </Clausula>
+
+      <Clausula numero={12} titulo="Contacto">
+        <p>
+          Consultas sobre privacidad y ejercicio de derechos:{" "}
+          <a
+            href="mailto:comercial@kapplasrl.com"
+            className="font-semibold text-rio"
+          >
+            comercial@kapplasrl.com
+          </a>
         </p>
       </Clausula>
     </LegalShell>

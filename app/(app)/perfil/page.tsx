@@ -123,6 +123,16 @@ export default async function PerfilPage() {
           </span>
         </Link>
 
+        <Link
+          href="/ayuda"
+          className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-medium text-noche shadow-sm"
+        >
+          Ayuda
+          <span aria-hidden className="text-tinta/40">
+            ›
+          </span>
+        </Link>
+
         <form action={signOutAction}>
           <button
             type="submit"

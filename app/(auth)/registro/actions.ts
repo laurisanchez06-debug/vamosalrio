@@ -15,8 +15,15 @@ export async function signUpAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const fechaNacimiento = String(formData.get("fecha_nacimiento") ?? "").trim();
   const genero = String(formData.get("genero") ?? "").trim();
+  const aceptaTerminos = String(formData.get("acepta_terminos") ?? "") === "1";
   const redirectTo = safeRedirect(formData.get("redirect"));
   const qs = redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : "";
+
+  if (!aceptaTerminos) {
+    redirect(
+      `/registro?error=${encodeURIComponent("Tenés que aceptar los Términos y la Política de Privacidad.")}${qs}`,
+    );
+  }
 
   if (!email || !password) {
     redirect(
