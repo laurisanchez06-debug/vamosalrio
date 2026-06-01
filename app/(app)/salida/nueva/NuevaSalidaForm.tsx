@@ -405,6 +405,12 @@ export default function NuevaSalidaForm() {
                   📍 Pin en {lat.toFixed(5)}, {lng.toFixed(5)}.
                 </p>
               ) : null}
+              {puntoEncuentro.trim() && (lat == null || lng == null) ? (
+                <p className="mt-2 rounded-xl bg-arena/10 px-3 py-2 text-xs leading-relaxed text-arena">
+                  📍 Marcá el punto en el mapa para que tus invitados sepan cómo
+                  llegar — sobre todo si no tiene dirección exacta.
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}

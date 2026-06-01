@@ -370,17 +370,7 @@ export default async function SalidaDetallePage({
                 rel="noopener noreferrer"
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rio/30 bg-rio/5 px-4 text-sm font-semibold text-rio active:scale-[0.98]"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 11l19-9-9 19-2-8-8-2z" />
-                </svg>
+                <span aria-hidden>📍</span>
                 Cómo llegar
               </a>
             </div>
