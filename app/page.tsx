@@ -210,7 +210,7 @@ export default function LandingPage() {
                 Crear cuenta
               </Link>
               <Link
-                href="/login"
+                href="/feed"
                 className="inline-flex h-13 items-center justify-center rounded-2xl border border-crema/30 bg-crema/10 px-7 py-3.5 text-base font-semibold text-crema backdrop-blur transition hover:bg-crema/20 active:scale-[0.98]"
               >
                 Explorar salidas
