@@ -31,7 +31,8 @@ const PASOS = [
   "¿Qué van a hacer?",
   "¿Cómo llegan al agua?",
   "¿Cuándo y dónde se juntan?",
-  "Los detalles",
+  "Lo básico",
+  "Opciones",
   "¿Todo listo para zarpar?",
 ];
 
@@ -144,6 +145,8 @@ export default function NuevaSalidaForm() {
     }
     if (n === 4) {
       if (!titulo.trim()) return "Ponele un título a la salida.";
+    }
+    if (n === 5) {
       if (cierreOpcion === "custom") {
         if (!cierreCustom) return "Elegí cuándo cierra la inscripción.";
         const c = new Date(cierreCustom);
@@ -177,7 +180,7 @@ export default function NuevaSalidaForm() {
 
   function publicar() {
     // Revalidar todos los pasos por las dudas.
-    for (let n = 1; n <= 4; n++) {
+    for (let n = 1; n <= 5; n++) {
       const msg = validarPaso(n);
       if (msg) {
         setError(msg);
@@ -406,7 +409,7 @@ export default function NuevaSalidaForm() {
           </div>
         ) : null}
 
-        {/* ── Paso 4: detalles ───────────────────────────────────────── */}
+        {/* ── Paso 4: lo básico ──────────────────────────────────────── */}
         {step === 4 ? (
           <div className="space-y-6">
             <div>
@@ -458,6 +461,136 @@ export default function NuevaSalidaForm() {
                 </button>
               </div>
             </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-noche">
+                  Costos compartidos
+                </span>
+                <button
+                  type="button"
+                  onClick={addCosto}
+                  className="text-sm font-semibold text-rio"
+                >
+                  + Agregar costo
+                </button>
+              </div>
+              {costos.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-tinta/15 bg-crema px-4 py-3 text-sm text-tinta/50">
+                  Sin costos compartidos. Si hay nafta, lancha o algo a dividir,
+                  sumalo.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {costos.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-2 rounded-2xl border border-tinta/15 bg-white px-3 py-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Concepto"
+                        value={c.concepto}
+                        onChange={(e) =>
+                          updateCosto(c.id, { concepto: e.target.value })
+                        }
+                        className="flex-1 bg-transparent px-1 py-2 text-sm outline-none"
+                      />
+                      <div className="flex items-center gap-1 text-sm text-tinta/50">
+                        <span>$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={100}
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={c.monto}
+                          onChange={(e) =>
+                            updateCosto(c.id, { monto: e.target.value })
+                          }
+                          className="w-24 bg-transparent py-2 text-right text-sm text-tinta outline-none"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCosto(c.id)}
+                        className="grid h-8 w-8 place-items-center rounded-full text-arena"
+                        aria-label="Quitar costo"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {costos.length > 0 ? (
+                <p className="mt-3 text-sm text-tinta/70">
+                  Total:{" "}
+                  <span className="font-semibold text-noche">
+                    {formatPesos(total)}
+                  </span>{" "}
+                  →{" "}
+                  <span className="font-semibold text-rio">
+                    {formatPesos(porPersona)} por persona
+                  </span>
+                </p>
+              ) : null}
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label
+                  htmlFor="descripcion"
+                  className="block text-sm font-medium text-noche"
+                >
+                  Descripción
+                </label>
+                <span
+                  className={`text-xs ${
+                    descripcion.length > MAX_DESC - 50
+                      ? "text-arena"
+                      : "text-tinta/40"
+                  }`}
+                >
+                  {descripcion.length}/{MAX_DESC}
+                </span>
+              </div>
+              <textarea
+                id="descripcion"
+                rows={3}
+                maxLength={MAX_DESC}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Contale a la tripulación de qué va la salida"
+                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="que_llevar"
+                className="mb-1 block text-sm font-medium text-noche"
+              >
+                Qué llevar
+              </label>
+              <textarea
+                id="que_llevar"
+                rows={2}
+                value={queLlevar}
+                onChange={(e) => setQueLlevar(e.target.value)}
+                placeholder="Ej: protector, agua, snacks, malla"
+                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* ── Paso 5: opciones (todo opcional) ───────────────────────── */}
+        {step === 5 ? (
+          <div className="space-y-6">
+            <p className="rounded-2xl bg-rio/5 px-4 py-3 text-sm text-tinta/70">
+              Todo esto es opcional — dejá lo que no uses como está.
+            </p>
 
             {/* Mínimo para salir (cuórum) */}
             <div>
@@ -601,127 +734,6 @@ export default function NuevaSalidaForm() {
               ) : null}
             </div>
 
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-noche">
-                  Costos compartidos
-                </span>
-                <button
-                  type="button"
-                  onClick={addCosto}
-                  className="text-sm font-semibold text-rio"
-                >
-                  + Agregar costo
-                </button>
-              </div>
-              {costos.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-tinta/15 bg-crema px-4 py-3 text-sm text-tinta/50">
-                  Sin costos compartidos. Si hay nafta, lancha o algo a dividir,
-                  sumalo.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {costos.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-2 rounded-2xl border border-tinta/15 bg-white px-3 py-2"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Concepto"
-                        value={c.concepto}
-                        onChange={(e) =>
-                          updateCosto(c.id, { concepto: e.target.value })
-                        }
-                        className="flex-1 bg-transparent px-1 py-2 text-sm outline-none"
-                      />
-                      <div className="flex items-center gap-1 text-sm text-tinta/50">
-                        <span>$</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step={100}
-                          inputMode="numeric"
-                          placeholder="0"
-                          value={c.monto}
-                          onChange={(e) =>
-                            updateCosto(c.id, { monto: e.target.value })
-                          }
-                          className="w-24 bg-transparent py-2 text-right text-sm text-tinta outline-none"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCosto(c.id)}
-                        className="grid h-8 w-8 place-items-center rounded-full text-arena"
-                        aria-label="Quitar costo"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {costos.length > 0 ? (
-                <p className="mt-3 text-sm text-tinta/70">
-                  Total:{" "}
-                  <span className="font-semibold text-noche">
-                    {formatPesos(total)}
-                  </span>{" "}
-                  →{" "}
-                  <span className="font-semibold text-rio">
-                    {formatPesos(porPersona)} por persona
-                  </span>
-                </p>
-              ) : null}
-            </div>
-
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label
-                  htmlFor="descripcion"
-                  className="block text-sm font-medium text-noche"
-                >
-                  Descripción
-                </label>
-                <span
-                  className={`text-xs ${
-                    descripcion.length > MAX_DESC - 50
-                      ? "text-arena"
-                      : "text-tinta/40"
-                  }`}
-                >
-                  {descripcion.length}/{MAX_DESC}
-                </span>
-              </div>
-              <textarea
-                id="descripcion"
-                rows={3}
-                maxLength={MAX_DESC}
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                placeholder="Contale a la tripulación de qué va la salida"
-                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="que_llevar"
-                className="mb-1 block text-sm font-medium text-noche"
-              >
-                Qué llevar
-              </label>
-              <textarea
-                id="que_llevar"
-                rows={2}
-                value={queLlevar}
-                onChange={(e) => setQueLlevar(e.target.value)}
-                placeholder="Ej: protector, agua, snacks, malla"
-                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
-              />
-            </div>
-
             {/* Salida privada */}
             <button
               type="button"
@@ -760,8 +772,8 @@ export default function NuevaSalidaForm() {
           </div>
         ) : null}
 
-        {/* ── Paso 5: resumen ────────────────────────────────────────── */}
-        {step === 5 ? (
+        {/* ── Paso 6: resumen ────────────────────────────────────────── */}
+        {step === 6 ? (
           <div className="space-y-3">
             <ResumenRow
               label="Tipo"
@@ -799,9 +811,7 @@ export default function NuevaSalidaForm() {
             <ResumenRow label="Título" value={titulo || "—"} onEdit={() => setStep(4)} />
             <ResumenRow
               label="Cupos"
-              value={`${cupos} personas${
-                minimoView != null ? ` · mínimo ${minimoView}` : ""
-              }`}
+              value={`${cupos} personas`}
               onEdit={() => setStep(4)}
             />
             <ResumenRow
@@ -814,13 +824,18 @@ export default function NuevaSalidaForm() {
               onEdit={() => setStep(4)}
             />
             <ResumenRow
+              label="Mínimo para salir"
+              value={minimoView != null ? `${minimoView} personas` : "Sin mínimo"}
+              onEdit={() => setStep(5)}
+            />
+            <ResumenRow
               label="Visibilidad"
               value={
                 esPrivada
                   ? "🔒 Privada · solo por link"
                   : "Pública · aparece en el feed"
               }
-              onEdit={() => setStep(4)}
+              onEdit={() => setStep(5)}
             />
             <ResumenRow
               label="Cierre inscripción"
@@ -843,7 +858,7 @@ export default function NuevaSalidaForm() {
                         ? "2 días antes"
                         : "3 días antes"
               }
-              onEdit={() => setStep(4)}
+              onEdit={() => setStep(5)}
             />
             <ResumenRow
               label="Edad"
@@ -852,7 +867,7 @@ export default function NuevaSalidaForm() {
                   ? "Sin restricción"
                   : `De ${edadMin} a ${edadMax} años`
               }
-              onEdit={() => setStep(4)}
+              onEdit={() => setStep(5)}
             />
             {descripcion.trim() ? (
               <ResumenRow
