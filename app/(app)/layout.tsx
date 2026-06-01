@@ -16,12 +16,14 @@ export default async function AppLayout({
   if (user) {
     const { data: prof } = await supabase
       .from("profiles")
-      .select("bloqueado, fecha_nacimiento")
+      .select("bloqueado, fecha_nacimiento, onboarding_completado")
       .eq("id", user.id)
       .maybeSingle();
     if (prof?.bloqueado) redirect("/suspendido");
     // Cuentas existentes sin fecha de nacimiento: completar perfil (barrera +18).
     if (prof && !prof.fecha_nacimiento) redirect("/completar-perfil");
+    // Primer ingreso: onboarding de bienvenida (salteable).
+    if (prof && !prof.onboarding_completado) redirect("/bienvenida");
   }
 
   return (
