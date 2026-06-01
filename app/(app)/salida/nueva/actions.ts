@@ -35,6 +35,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   const transporte = String(formData.get("transporte") ?? "").trim();
   const categoria = String(formData.get("categoria") ?? "").trim();
   const queLlevar = String(formData.get("que_llevar") ?? "").trim();
+  const esPrivada = String(formData.get("es_privada") ?? "").trim() === "1";
   const latRaw = String(formData.get("punto_encuentro_lat") ?? "").trim();
   const lngRaw = String(formData.get("punto_encuentro_lng") ?? "").trim();
   const lat = latRaw ? Number(latRaw) : null;
@@ -111,6 +112,7 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       categoria: categoria || null,
       costos,
       que_llevar: queLlevar || null,
+      es_privada: esPrivada,
     })
     .select("id")
     .single();

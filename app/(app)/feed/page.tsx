@@ -25,6 +25,7 @@ export default async function FeedPage({
        host:profiles!salidas_host_id_fkey (nombre, foto_url, reputacion_promedio, es_capitan)`,
     )
     .eq("estado", "abierta")
+    .eq("es_privada", false)
     .order("fecha_hora", { ascending: true });
 
   const salidas = (data ?? []) as unknown as SalidaFeed[];

@@ -68,6 +68,7 @@ export default function NuevaSalidaForm() {
   const [costos, setCostos] = useState<CostoRow[]>([]);
   const [descripcion, setDescripcion] = useState("");
   const [queLlevar, setQueLlevar] = useState("");
+  const [esPrivada, setEsPrivada] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -155,6 +156,7 @@ export default function NuevaSalidaForm() {
     fd.set("transporte_otro", transporte === "otro" ? transporteOtro.trim() : "");
     fd.set("categoria", categoria);
     fd.set("que_llevar", queLlevar);
+    fd.set("es_privada", esPrivada ? "1" : "");
     fd.set("punto_encuentro_lat", lat != null ? String(lat) : "");
     fd.set("punto_encuentro_lng", lng != null ? String(lng) : "");
     fd.set(
@@ -557,6 +559,42 @@ export default function NuevaSalidaForm() {
                 className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
               />
             </div>
+
+            {/* Salida privada */}
+            <button
+              type="button"
+              onClick={() => setEsPrivada((v) => !v)}
+              aria-pressed={esPrivada}
+              className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition ${
+                esPrivada
+                  ? "border-rio bg-rio/10"
+                  : "border-tinta/15 bg-white"
+              }`}
+            >
+              <span className="mt-0.5 text-xl" aria-hidden>
+                🔒
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-noche">
+                  ¿Salida privada?
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-tinta/60">
+                  Solo la gente con el link puede verla y sumarse. No aparece en
+                  el feed.
+                </span>
+              </span>
+              <span
+                className={`mt-0.5 flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition ${
+                  esPrivada ? "bg-rio" : "bg-tinta/20"
+                }`}
+              >
+                <span
+                  className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    esPrivada ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </span>
+            </button>
           </div>
         ) : null}
 
@@ -610,6 +648,15 @@ export default function NuevaSalidaForm() {
                 total > 0
                   ? `${formatPesos(total)} · ${formatPesos(porPersona)} c/u`
                   : "Sin costo"
+              }
+              onEdit={() => setStep(4)}
+            />
+            <ResumenRow
+              label="Visibilidad"
+              value={
+                esPrivada
+                  ? "🔒 Privada · solo por link"
+                  : "Pública · aparece en el feed"
               }
               onEdit={() => setStep(4)}
             />

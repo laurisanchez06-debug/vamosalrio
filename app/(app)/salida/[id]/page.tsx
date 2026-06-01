@@ -105,7 +105,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, costos, que_llevar, estado, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, costos, que_llevar, estado, es_privada, host_id",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -427,7 +427,7 @@ export default async function SalidaDetallePage({
         </div>
       ) : null}
 
-      <BotonesCompartir {...shareProps} />
+      <BotonesCompartir {...shareProps} destacado={salida!.es_privada} />
     </div>
   );
 
@@ -566,6 +566,11 @@ export default async function SalidaDetallePage({
           {salida!.categoria ? (
             <span className="inline-flex items-center rounded-full bg-rio/10 px-3 py-1 text-xs font-medium text-rio">
               {CATEGORIA_LABEL[salida!.categoria] ?? salida!.categoria}
+            </span>
+          ) : null}
+          {salida!.es_privada ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-noche/10 px-3 py-1 text-xs font-medium text-noche">
+              🔒 Privada
             </span>
           ) : null}
         </div>
