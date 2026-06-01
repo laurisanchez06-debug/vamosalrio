@@ -4,16 +4,22 @@ import Link from "next/link";
 /* ── Marca ──────────────────────────────────────────────────────────────── */
 
 function Logo() {
-  // Mismo logo de marca que el footer (/logo.png).
+  // Header sobre fondo azul: isotipo (pin) + wordmark tipeado en blanco.
   return (
-    <Image
-      src="/logo.png"
-      alt="vamosalrio"
-      width={120}
-      height={110}
-      priority
-      className="h-12 w-auto"
-    />
+    <span className="flex items-center gap-2">
+      <Image
+        src="/vamosalrio_isotipo.png"
+        alt=""
+        aria-hidden
+        width={40}
+        height={40}
+        priority
+        className="h-10 w-auto"
+      />
+      <span className="text-xl font-bold tracking-tight text-crema">
+        vamosalrio
+      </span>
+    </span>
   );
 }
 
@@ -446,11 +452,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl border-t border-tinta/10 px-6 py-10">
           <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
             <Image
-              src="/logo.png"
+              src="/vamosalrio_logo_full.png"
               alt="vamosalrio"
-              width={120}
-              height={110}
-              className="h-24 w-auto"
+              width={320}
+              height={120}
+              className="h-20 w-auto"
             />
             <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-tinta/60">
               <Link href="/terminos" className="hover:text-rio">

@@ -9,6 +9,7 @@ export default function LoginPage({
 }) {
   return (
     <AuthCard
+      logo
       titulo="Entrar"
       subtitulo="Bienvenido de vuelta a vamosalrio."
       footer={

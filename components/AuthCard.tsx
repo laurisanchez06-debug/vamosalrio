@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type Props = {
@@ -5,9 +6,16 @@ type Props = {
   subtitulo?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  logo?: boolean;
 };
 
-export default function AuthCard({ titulo, subtitulo, children, footer }: Props) {
+export default function AuthCard({
+  titulo,
+  subtitulo,
+  children,
+  footer,
+  logo,
+}: Props) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-crema">
       <div
@@ -25,6 +33,17 @@ export default function AuthCard({ titulo, subtitulo, children, footer }: Props)
         >
           <span aria-hidden>←</span> Volver
         </Link>
+
+        {logo ? (
+          <Image
+            src="/vamosalrio_logo_full.png"
+            alt="vamosalrio"
+            width={320}
+            height={120}
+            priority
+            className="mt-8 h-16 w-auto"
+          />
+        ) : null}
 
         <div className="mt-10">
           <h1 className="text-3xl font-bold tracking-tight text-noche">

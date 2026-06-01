@@ -11,14 +11,8 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/logo-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.png",
-      "sizes": "256x256",
+      "src": "/vamosalrio_isotipo.png",
+      "sizes": "485x692",
       "type": "image/png",
       "purpose": "any"
     }
