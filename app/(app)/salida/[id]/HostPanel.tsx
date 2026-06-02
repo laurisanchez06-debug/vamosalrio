@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import Toast from "@/components/Toast";
 import RangoBadge from "@/components/RangoBadge";
@@ -85,6 +86,7 @@ export default function HostPanel({
     { msg: string; tipo: "info" | "error" } | null
   >(null);
   const [, startTransition] = useTransition();
+  const router = useRouter();
 
   const puedeFinalizar = estadoSalida === "abierta" || estadoSalida === "completa";
   const puedeCancelar = estadoSalida === "abierta" || estadoSalida === "completa";
@@ -102,7 +104,12 @@ export default function HostPanel({
       const r = await finalizarSalidaAction(salidaId);
       setFinalizando(false);
       if ("error" in r) showToast(r.error, "error");
-      else showToast("Salida finalizada ✓");
+      else {
+        showToast("Salida finalizada ✓");
+        // Garantiza que el badge ("Finalizada") y la tab se actualicen sin
+        // recarga manual, además del revalidatePath del Server Action.
+        router.refresh();
+      }
     });
   }
 

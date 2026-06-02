@@ -350,11 +350,22 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
     .eq("id", salidaId);
   if (error) return { error: error.message };
 
-  // El host pudo subir de rango al sumar una salida finalizada.
+  // El estado ya cambió en la DB: revalidamos YA, antes de cualquier tarea
+  // secundaria, para que el badge nunca se quede en "Abierta" si algo de lo
+  // que sigue (rangos / mails) llegara a fallar.
+  revalidatePath(`/salida/${salidaId}`);
+  revalidatePath("/feed");
+
+  // El host pudo subir de rango al sumar una salida finalizada. Es un cálculo
+  // derivado: si falla, la salida igual quedó finalizada (no rompemos la acción).
   const admin = createAdminClient();
-  await recalcularEsCapitan(admin, user.id);
-  await calcularRangoHost(user.id);
-  await calcularRangoTripulante(user.id);
+  try {
+    await recalcularEsCapitan(admin, user.id);
+    await calcularRangoHost(user.id);
+    await calcularRangoTripulante(user.id);
+  } catch {
+    // best-effort: se recalcula en la próxima calificación/finalización.
+  }
 
   try {
     const { data: aceptados } = await supabase
@@ -376,7 +387,6 @@ export async function finalizarSalidaAction(salidaId: string): Promise<Result> {
     // fire-and-forget
   }
 
-  revalidatePath(`/salida/${salidaId}`);
   return { ok: true };
 }
 

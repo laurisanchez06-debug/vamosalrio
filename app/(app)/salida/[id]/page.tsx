@@ -29,6 +29,14 @@ const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
 };
 
+const ESTADO_LABEL: Record<string, string> = {
+  abierta: "Abierta",
+  completa: "Completa",
+  cerrada: "Cerrada",
+  finalizada: "Finalizada",
+  cancelada: "Cancelada",
+};
+
 type Costo = { concepto: string; monto: number };
 
 type AporteRow = {
@@ -620,7 +628,7 @@ export default async function SalidaDetallePage({
       <header className="mt-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full bg-arena/15 px-3 py-1 text-xs font-medium text-arena">
-            {salida!.estado === "abierta" ? "Abierta" : salida!.estado}
+            {ESTADO_LABEL[salida!.estado] ?? salida!.estado}
           </span>
           {salida!.categoria ? (
             <span className="inline-flex items-center rounded-full bg-rio/10 px-3 py-1 text-xs font-medium text-rio">
