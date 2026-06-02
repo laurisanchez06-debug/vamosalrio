@@ -9,7 +9,6 @@ import {
   formatPesos,
 } from "@/lib/format";
 import CapitanBadge from "@/components/CapitanBadge";
-import CierreCountdown from "@/components/CierreCountdown";
 import PortadaCover from "@/components/PortadaCover";
 
 type Host = {
@@ -563,52 +562,61 @@ function SalidaCard({
   return (
     <Link
       href={`/salida/${salida.id}`}
-      className="block overflow-hidden rounded-2xl bg-white shadow-sm transition active:scale-[0.99]"
+      className="flex gap-3 overflow-hidden rounded-2xl bg-white p-2.5 shadow-sm transition active:scale-[0.99]"
     >
-      {/* Banner: portada (foto o fallback de marca) */}
-      <div className="relative aspect-[2/1] w-full">
+      {/* Thumbnail cuadrado: portada (foto o fallback de marca). El banner
+          grande 16:9 queda solo en el detalle de la salida. */}
+      <div className="relative h-[92px] w-[92px] shrink-0 overflow-hidden rounded-xl">
         <PortadaCover
           imagenPortada={salida.imagen_portada}
           categoria={salida.categoria}
           tipoOtro={salida.tipo_otro}
           titulo={salida.titulo}
-          iconClassName="text-5xl"
+          iconClassName="text-2xl"
+          showLabel={false}
         />
-        {/* Estado (arriba a la derecha) */}
-        <span
-          className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm ${badgeClass}`}
-        >
-          {badgeLabel}
-        </span>
-        {/* Tipo (arriba a la izquierda) */}
-        {tipoLabel ? (
-          <span className="absolute left-2 top-2 inline-flex max-w-[60%] items-center truncate rounded-full bg-noche/55 px-2.5 py-1 text-[11px] font-semibold text-crema backdrop-blur">
-            {tipoLabel}
-          </span>
-        ) : null}
-        {/* Avatar del host (chico, sobre la imagen abajo a la izquierda) */}
-        <div className="absolute -bottom-3 left-3 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 border-white bg-rio text-[11px] font-bold text-crema shadow">
-          {host?.foto_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={host.foto_url}
-              alt={host?.nombre ?? "Host"}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span>{initials(host?.nombre)}</span>
-          )}
-        </div>
       </div>
 
-      <div className="px-4 pb-3 pt-4">
-        {/* Fila 1: nombre del host + rating */}
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-noche">
+      {/* Info a la derecha, en columna */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
+        {/* Fila 1: badge tipo + badge estado (+ edad) */}
+        <div className="flex items-center gap-1.5">
+          {tipoLabel ? (
+            <span className="inline-flex max-w-[55%] items-center truncate rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
+              {tipoLabel}
+            </span>
+          ) : null}
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass}`}
+          >
+            {badgeLabel}
+          </span>
+          {edadBadge ? (
+            <span className="ml-auto shrink-0 rounded-full bg-noche/5 px-2 py-0.5 text-[11px] font-semibold text-tinta/60">
+              {edadBadge}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Fila 2: host + rating */}
+        <div className="mt-1 flex items-center gap-1.5">
+          <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-rio text-[9px] font-bold text-crema">
+            {host?.foto_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={host.foto_url}
+                alt={host?.nombre ?? "Host"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{initials(host?.nombre)}</span>
+            )}
+          </span>
+          <span className="truncate text-xs font-medium text-tinta/70">
             {host?.nombre ?? "Anónimo"}
           </span>
           {host?.es_capitan ? <CapitanBadge /> : null}
-          <span className="ml-auto flex shrink-0 items-center gap-0.5 text-xs text-tinta/50">
+          <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[11px] text-tinta/50">
             <span aria-hidden className="text-arena">
               ★
             </span>
@@ -616,63 +624,51 @@ function SalidaCard({
           </span>
         </div>
 
-        {/* Fila 2: título + edad */}
-        <div className="mt-2 flex items-baseline gap-2">
-          <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">
-            {salida.titulo}
-          </h3>
-          {edadBadge ? (
-            <span className="inline-flex shrink-0 items-center self-center rounded-full bg-noche/5 px-2 py-0.5 text-[11px] font-semibold text-tinta/60">
-              {edadBadge}
+        {/* Fila 3: título */}
+        <h3 className="mt-1 truncate text-sm font-semibold leading-tight text-noche">
+          {salida.titulo}
+        </h3>
+
+        {/* Fila 4: fecha · lugar (una línea) */}
+        <div className="mt-1 flex items-center gap-1 text-[11px] text-tinta/60">
+          <span aria-hidden>📅</span>
+          <span className="shrink-0">{formatFechaCorta(salida.fecha_hora)}</span>
+          {salida.punto_encuentro_texto ? (
+            <>
+              <span aria-hidden className="text-tinta/30">
+                ·
+              </span>
+              <span aria-hidden>📍</span>
+              <span className="truncate">{salida.punto_encuentro_texto}</span>
+            </>
+          ) : null}
+          {distanciaKm != null ? (
+            <span className="shrink-0 font-medium text-noche/70">
+              · {fmtKm(distanciaKm)}
             </span>
           ) : null}
         </div>
 
-        {/* Fila 3: fecha · lugar (una línea) */}
-        <div className="mt-1.5 flex items-center gap-1 text-xs text-tinta/60">
-        <span aria-hidden>📅</span>
-        <span className="shrink-0">{formatFechaCorta(salida.fecha_hora)}</span>
-        {salida.punto_encuentro_texto ? (
-          <>
-            <span aria-hidden className="text-tinta/30">
-              ·
+        {/* Fila 5: disponibilidad + costo */}
+        <div className="mt-1.5 flex items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tinta/10">
+            <div
+              className="h-full rounded-full bg-rio transition-all"
+              style={{ width: `${ocupadoPct}%` }}
+              aria-hidden
+            />
+          </div>
+          <span className="shrink-0 text-[11px] text-tinta/60">
+            {cuposLibres}/{salida.cupos_total}
+          </span>
+          {total > 0 ? (
+            <span className="shrink-0 text-[11px] font-semibold text-rio">
+              {formatPesos(porPersona)}
             </span>
-            <span aria-hidden>📍</span>
-            <span className="truncate">{salida.punto_encuentro_texto}</span>
-          </>
-        ) : null}
-        {distanciaKm != null ? (
-          <span className="shrink-0 font-medium text-noche/70">
-            · {fmtKm(distanciaKm)}
-          </span>
-        ) : null}
-      </div>
-
-      {/* Fila 4: disponibilidad + costo */}
-      <div className="mt-2.5 flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tinta/10">
-          <div
-            className="h-full rounded-full bg-rio transition-all"
-            style={{ width: `${ocupadoPct}%` }}
-            aria-hidden
-          />
+          ) : (
+            <span className="shrink-0 text-[11px] text-tinta/50">Gratis</span>
+          )}
         </div>
-        <span className="shrink-0 text-xs text-tinta/60">
-          {cuposLibres}/{salida.cupos_total}
-        </span>
-        {total > 0 ? (
-          <span className="shrink-0 text-xs font-semibold text-rio">
-            {formatPesos(porPersona)}
-          </span>
-        ) : (
-          <span className="shrink-0 text-xs text-tinta/50">Gratis</span>
-        )}
-      </div>
-
-        <CierreCountdown
-          cierre={salida.cierre_inscripcion ?? salida.fecha_hora}
-          className="mt-1.5 text-[11px] font-medium"
-        />
       </div>
     </Link>
   );
