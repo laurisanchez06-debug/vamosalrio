@@ -10,6 +10,7 @@ import {
 } from "@/lib/format";
 import CapitanBadge from "@/components/CapitanBadge";
 import CierreCountdown from "@/components/CierreCountdown";
+import PortadaCover from "@/components/PortadaCover";
 
 type Host = {
   nombre: string | null;
@@ -39,6 +40,7 @@ export type SalidaFeed = {
   costos: Costo[] | null;
   estado: string;
   host_id: string;
+  imagen_portada: string | null;
   host: Host | Host[] | null;
 };
 
@@ -561,11 +563,31 @@ function SalidaCard({
   return (
     <Link
       href={`/salida/${salida.id}`}
-      className="block rounded-2xl bg-white px-4 py-3 shadow-sm transition active:scale-[0.99]"
+      className="block overflow-hidden rounded-2xl bg-white shadow-sm transition active:scale-[0.99]"
     >
-      {/* Fila 1: avatar + nombre + rating + estado */}
-      <div className="flex items-center gap-2">
-        <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-rio text-xs font-bold text-crema">
+      {/* Banner: portada (foto o fallback de marca) */}
+      <div className="relative aspect-[2/1] w-full">
+        <PortadaCover
+          imagenPortada={salida.imagen_portada}
+          categoria={salida.categoria}
+          tipoOtro={salida.tipo_otro}
+          titulo={salida.titulo}
+          iconClassName="text-5xl"
+        />
+        {/* Estado (arriba a la derecha) */}
+        <span
+          className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm ${badgeClass}`}
+        >
+          {badgeLabel}
+        </span>
+        {/* Tipo (arriba a la izquierda) */}
+        {tipoLabel ? (
+          <span className="absolute left-2 top-2 inline-flex max-w-[60%] items-center truncate rounded-full bg-noche/55 px-2.5 py-1 text-[11px] font-semibold text-crema backdrop-blur">
+            {tipoLabel}
+          </span>
+        ) : null}
+        {/* Avatar del host (chico, sobre la imagen abajo a la izquierda) */}
+        <div className="absolute -bottom-3 left-3 grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 border-white bg-rio text-[11px] font-bold text-crema shadow">
           {host?.foto_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -577,42 +599,37 @@ function SalidaCard({
             <span>{initials(host?.nombre)}</span>
           )}
         </div>
-        <span className="truncate text-sm font-semibold text-noche">
-          {host?.nombre ?? "Anónimo"}
-        </span>
-        {host?.es_capitan ? <CapitanBadge /> : null}
-        <span className="flex shrink-0 items-center gap-0.5 text-xs text-tinta/50">
-          <span aria-hidden className="text-arena">
-            ★
-          </span>
-          {reputacion.toFixed(1)}
-        </span>
-        <span
-          className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}
-        >
-          {badgeLabel}
-        </span>
       </div>
 
-      {/* Fila 2: badge tipo + título */}
-      <div className="mt-2 flex items-baseline gap-2">
-        {tipoLabel ? (
-          <span className="inline-flex max-w-[55%] shrink-0 items-center self-center truncate rounded-full bg-rio/10 px-2 py-0.5 text-[11px] font-semibold text-rio">
-            {tipoLabel}
+      <div className="px-4 pb-3 pt-4">
+        {/* Fila 1: nombre del host + rating */}
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-semibold text-noche">
+            {host?.nombre ?? "Anónimo"}
           </span>
-        ) : null}
-        {edadBadge ? (
-          <span className="inline-flex shrink-0 items-center self-center rounded-full bg-noche/5 px-2 py-0.5 text-[11px] font-semibold text-tinta/60">
-            {edadBadge}
+          {host?.es_capitan ? <CapitanBadge /> : null}
+          <span className="ml-auto flex shrink-0 items-center gap-0.5 text-xs text-tinta/50">
+            <span aria-hidden className="text-arena">
+              ★
+            </span>
+            {reputacion.toFixed(1)}
           </span>
-        ) : null}
-        <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">
-          {salida.titulo}
-        </h3>
-      </div>
+        </div>
 
-      {/* Fila 3: fecha · lugar (una línea) */}
-      <div className="mt-1.5 flex items-center gap-1 text-xs text-tinta/60">
+        {/* Fila 2: título + edad */}
+        <div className="mt-2 flex items-baseline gap-2">
+          <h3 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-noche">
+            {salida.titulo}
+          </h3>
+          {edadBadge ? (
+            <span className="inline-flex shrink-0 items-center self-center rounded-full bg-noche/5 px-2 py-0.5 text-[11px] font-semibold text-tinta/60">
+              {edadBadge}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Fila 3: fecha · lugar (una línea) */}
+        <div className="mt-1.5 flex items-center gap-1 text-xs text-tinta/60">
         <span aria-hidden>📅</span>
         <span className="shrink-0">{formatFechaCorta(salida.fecha_hora)}</span>
         {salida.punto_encuentro_texto ? (
@@ -652,10 +669,11 @@ function SalidaCard({
         )}
       </div>
 
-      <CierreCountdown
-        cierre={salida.cierre_inscripcion ?? salida.fecha_hora}
-        className="mt-1.5 text-[11px] font-medium"
-      />
+        <CierreCountdown
+          cierre={salida.cierre_inscripcion ?? salida.fecha_hora}
+          className="mt-1.5 text-[11px] font-medium"
+        />
+      </div>
     </Link>
   );
 }

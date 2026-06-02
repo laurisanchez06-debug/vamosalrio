@@ -26,7 +26,7 @@ export default async function EditarSalidaPage({
   const { data: salida } = await supabase
     .from("salidas")
     .select(
-      "id, host_id, estado, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, es_privada, cierre_inscripcion, edad_min, edad_max",
+      "id, host_id, estado, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cupos_total, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, es_privada, cierre_inscripcion, edad_min, edad_max, imagen_portada",
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -79,6 +79,7 @@ export default async function EditarSalidaPage({
     cierreInscripcionISO: salida!.cierre_inscripcion,
     edadMin: salida!.edad_min,
     edadMax: salida!.edad_max,
+    imagenPortada: salida!.imagen_portada,
   };
 
   return (

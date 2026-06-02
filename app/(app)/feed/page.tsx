@@ -21,7 +21,7 @@ export default async function FeedPage({
   const { data } = await supabase
     .from("salidas")
     .select(
-      `id, titulo, fecha_hora, cierre_inscripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, edad_min, edad_max, costos, estado, host_id,
+      `id, titulo, fecha_hora, cierre_inscripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, edad_min, edad_max, costos, estado, host_id, imagen_portada,
        host:profiles!salidas_host_id_fkey (nombre, foto_url, reputacion_promedio, es_capitan)`,
     )
     .eq("estado", "abierta")

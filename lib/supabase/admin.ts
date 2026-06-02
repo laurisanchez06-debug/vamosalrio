@@ -19,6 +19,7 @@ export function createAdminClient(): SupabaseClient {
 }
 
 const AVATARS_BUCKET = "avatars";
+const SALIDAS_BUCKET = "salidas";
 
 export async function ensureAvatarsBucket() {
   const admin = createAdminClient();
@@ -32,4 +33,17 @@ export async function ensureAvatarsBucket() {
   }
 }
 
-export { AVATARS_BUCKET };
+// Bucket público para las fotos de portada de las salidas.
+export async function ensureSalidasBucket() {
+  const admin = createAdminClient();
+  const { error } = await admin.storage.createBucket(SALIDAS_BUCKET, {
+    public: true,
+    fileSizeLimit: 5 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  });
+  if (error && !/already exists/i.test(error.message)) {
+    throw error;
+  }
+}
+
+export { AVATARS_BUCKET, SALIDAS_BUCKET };

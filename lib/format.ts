@@ -106,6 +106,24 @@ export const CATEGORIA_LABEL: Record<string, string> = Object.fromEntries(
   CATEGORIAS.map((c) => [c.value, c.label]),
 );
 
+// Ícono (emoji) por tipo de salida — usado en el wizard y en el fallback de
+// portada cuando no hay foto cargada.
+export const CATEGORIA_EMOJI: Record<string, string> = {
+  lancha_paseo: "🚤",
+  pesca: "🎣",
+  kayak_remo: "🛶",
+  playa_isla: "🏖️",
+  asado_isla: "🔥",
+  deportes_nauticos: "🏄",
+  campamento: "⛺",
+  otro: "✨",
+};
+
+export function categoriaEmoji(categoria: string | null | undefined): string {
+  if (!categoria) return "🌊";
+  return CATEGORIA_EMOJI[categoria] ?? "🌊";
+}
+
 // Texto a mostrar para el tipo de salida. Para 'otro', usa el texto libre
 // que cargó el host (tipo_otro); si falta, cae a "Otro".
 export function categoriaLabel(

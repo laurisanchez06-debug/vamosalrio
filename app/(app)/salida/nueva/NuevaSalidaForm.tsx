@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { CATEGORIAS, TRANSPORTE_LABEL } from "@/lib/format";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { CATEGORIAS, CATEGORIA_EMOJI, TRANSPORTE_LABEL } from "@/lib/format";
 import MapPicker from "@/components/map/MapPicker";
 import { createSalidaAction, updateSalidaAction } from "./actions";
 
@@ -25,6 +25,7 @@ export type SalidaInicial = {
   cierreInscripcionISO: string | null;
   edadMin: number | null;
   edadMax: number | null;
+  imagenPortada: string | null;
 };
 
 // ISO (UTC) → valor para <input type="datetime-local"> en hora local del browser.
@@ -45,17 +46,6 @@ const TRANSPORTES = [
   { value: "a_pie", label: "A pie" },
   { value: "otro", label: "Otro" },
 ] as const;
-
-const CATEGORIA_EMOJI: Record<string, string> = {
-  lancha_paseo: "🚤",
-  pesca: "🎣",
-  kayak_remo: "🛶",
-  playa_isla: "🏖️",
-  asado_isla: "🔥",
-  deportes_nauticos: "🏄",
-  campamento: "⛺",
-  otro: "✨",
-};
 
 const PASOS = [
   "¿Qué van a hacer?",
@@ -135,6 +125,65 @@ export default function NuevaSalidaForm({
   );
   const [edadMin, setEdadMin] = useState(initial?.edadMin ?? 18);
   const [edadMax, setEdadMax] = useState(initial?.edadMax ?? 65);
+
+  // Foto de portada (opcional).
+  // portadaUrl: URL ya guardada (si estamos editando y no se reemplazó/quitó).
+  // portadaFile: imagen nueva (ya comprimida en el browser) a subir.
+  // portadaPreview: object URL local para previsualizar la imagen nueva.
+  const [portadaUrl, setPortadaUrl] = useState<string | null>(
+    initial?.imagenPortada ?? null,
+  );
+  const [portadaFile, setPortadaFile] = useState<File | null>(null);
+  const [portadaPreview, setPortadaPreview] = useState<string | null>(null);
+  const [portadaProcesando, setPortadaProcesando] = useState(false);
+  const portadaInputRef = useRef<HTMLInputElement | null>(null);
+
+  const portadaVista = portadaPreview ?? portadaUrl;
+
+  // Limpiar el object URL local al desmontar o al reemplazar la imagen.
+  useEffect(() => {
+    return () => {
+      if (portadaPreview) URL.revokeObjectURL(portadaPreview);
+    };
+  }, [portadaPreview]);
+
+  async function onPortadaChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permitir re-elegir el mismo archivo
+    if (!file) return;
+
+    if (!/^image\/(jpe?g|png|webp)$/i.test(file.type)) {
+      setError("La foto de portada tiene que ser jpg, png o webp.");
+      return;
+    }
+
+    setError(null);
+    setPortadaProcesando(true);
+    try {
+      const imageCompression = (await import("browser-image-compression"))
+        .default;
+      const comprimida = await imageCompression(file, {
+        maxWidthOrHeight: 1200,
+        maxSizeMB: 1,
+        useWebWorker: true,
+        fileType: "image/webp",
+      });
+      if (portadaPreview) URL.revokeObjectURL(portadaPreview);
+      setPortadaFile(comprimida);
+      setPortadaPreview(URL.createObjectURL(comprimida));
+    } catch {
+      setError("No pudimos procesar la imagen. Probá con otra.");
+    } finally {
+      setPortadaProcesando(false);
+    }
+  }
+
+  function quitarPortada() {
+    if (portadaPreview) URL.revokeObjectURL(portadaPreview);
+    setPortadaFile(null);
+    setPortadaPreview(null);
+    setPortadaUrl(null);
+  }
 
   // Editando: no se pueden bajar los cupos por debajo de los ya aceptados.
   const cuposMin = Math.max(2, aceptados);
@@ -269,6 +318,10 @@ export default function NuevaSalidaForm({
     fd.set("edad_max", sinRestriccionEdad ? "" : String(edadMax));
     fd.set("punto_encuentro_lat", lat != null ? String(lat) : "");
     fd.set("punto_encuentro_lng", lng != null ? String(lng) : "");
+    // Portada: si hay una imagen nueva la mandamos para subirla; si no, mandamos
+    // la URL actual a conservar ("" = sin foto / se quitó).
+    if (portadaFile) fd.set("imagen_portada_file", portadaFile);
+    fd.set("imagen_portada_actual", portadaUrl ?? "");
     fd.set(
       "costos_json",
       JSON.stringify(
@@ -495,6 +548,76 @@ export default function NuevaSalidaForm({
                 placeholder='Ej: "Domingo en Charigüé"'
                 className="block w-full rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
               />
+            </div>
+
+            {/* Foto de portada (opcional) */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-noche">
+                Foto de portada{" "}
+                <span className="font-normal text-tinta/40">(opcional)</span>
+              </label>
+              <input
+                ref={portadaInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={onPortadaChange}
+                className="hidden"
+              />
+
+              {portadaVista ? (
+                <div className="relative overflow-hidden rounded-2xl border border-tinta/15 bg-crema">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={portadaVista}
+                    alt="Portada de la salida"
+                    className="aspect-[16/9] w-full object-cover"
+                  />
+                  <div className="absolute right-2 top-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => portadaInputRef.current?.click()}
+                      disabled={portadaProcesando}
+                      className="rounded-full bg-noche/70 px-3 py-1.5 text-xs font-semibold text-crema backdrop-blur disabled:opacity-60"
+                    >
+                      Cambiar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={quitarPortada}
+                      disabled={portadaProcesando}
+                      className="rounded-full bg-noche/70 px-3 py-1.5 text-xs font-semibold text-crema backdrop-blur disabled:opacity-60"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => portadaInputRef.current?.click()}
+                  disabled={portadaProcesando}
+                  className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-tinta/20 bg-white text-tinta/50 transition active:scale-[0.99] disabled:opacity-60"
+                >
+                  {portadaProcesando ? (
+                    <span className="text-sm font-medium">Procesando…</span>
+                  ) : (
+                    <>
+                      <span className="text-3xl" aria-hidden>
+                        🖼️
+                      </span>
+                      <span className="text-sm font-medium">
+                        Subir una foto
+                      </span>
+                      <span className="text-xs text-tinta/40">
+                        jpg, png o webp
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
+              <p className="mt-1.5 text-xs text-tinta/50">
+                Sin foto se muestra una portada de color según el tipo de salida.
+              </p>
             </div>
 
             <div>
@@ -993,7 +1116,7 @@ export default function NuevaSalidaForm({
           <button
             type="button"
             onClick={publicar}
-            disabled={pending}
+            disabled={pending || portadaProcesando}
             className="inline-flex h-12 flex-[2] items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 transition active:scale-[0.98] disabled:opacity-60"
           >
             {pending

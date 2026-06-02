@@ -3,6 +3,11 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import {
+  SALIDAS_BUCKET,
+  createAdminClient,
+  ensureSalidasBucket,
+} from "@/lib/supabase/admin";
 
 const TRANSPORTES = [
   "lancha_publica",
@@ -173,6 +178,51 @@ function parseSalidaForm(
   };
 }
 
+// Resuelve la URL de la portada a guardar.
+// - Si llega una imagen nueva (ya comprimida en el browser): la sube y devuelve su URL.
+// - Si no: conserva la URL actual ("" = sin foto / se quitó → null).
+async function resolverPortada(
+  formData: FormData,
+  userId: string,
+): Promise<{ url: string | null } | { error: string }> {
+  const file = formData.get("imagen_portada_file");
+  const actual = String(formData.get("imagen_portada_actual") ?? "").trim();
+
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: "La foto de portada es demasiado pesada." };
+    }
+    try {
+      await ensureSalidasBucket();
+      const admin = createAdminClient();
+      const ext = file.type === "image/png"
+        ? "png"
+        : file.type === "image/jpeg"
+          ? "jpg"
+          : "webp";
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const arrayBuffer = await file.arrayBuffer();
+      const { error: uploadError } = await admin.storage
+        .from(SALIDAS_BUCKET)
+        .upload(path, Buffer.from(arrayBuffer), {
+          contentType: file.type || "image/webp",
+          upsert: true,
+        });
+      if (uploadError) throw uploadError;
+      const { data: publicUrl } = admin.storage
+        .from(SALIDAS_BUCKET)
+        .getPublicUrl(path);
+      return { url: publicUrl.publicUrl };
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "No pudimos subir la foto de portada.";
+      return { error: msg };
+    }
+  }
+
+  return { url: actual || null };
+}
+
 export async function createSalidaAction(formData: FormData): Promise<Result> {
   const supabase = createClient();
   const {
@@ -187,6 +237,9 @@ export async function createSalidaAction(formData: FormData): Promise<Result> {
   if ("error" in parsed) return parsed;
   const v = parsed.values;
 
+  const portada = await resolverPortada(formData, user.id);
+  if ("error" in portada) return portada;
+
   const { data, error } = await supabase
     .from("salidas")
     .insert({
@@ -194,6 +247,7 @@ export async function createSalidaAction(formData: FormData): Promise<Result> {
       tipo: "rio",
       estado: "abierta",
       titulo: v.titulo,
+      imagen_portada: portada.url,
       descripcion: v.descripcion,
       punto_encuentro_texto: v.punto_encuentro_texto,
       punto_encuentro_lat: v.punto_encuentro_lat,
@@ -272,10 +326,14 @@ export async function updateSalidaAction(
     };
   }
 
+  const portada = await resolverPortada(formData, user.id);
+  if ("error" in portada) return portada;
+
   const { error } = await supabase
     .from("salidas")
     .update({
       titulo: v.titulo,
+      imagen_portada: portada.url,
       descripcion: v.descripcion,
       punto_encuentro_texto: v.punto_encuentro_texto,
       punto_encuentro_lat: v.punto_encuentro_lat,

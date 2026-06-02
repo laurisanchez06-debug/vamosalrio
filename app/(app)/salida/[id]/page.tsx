@@ -23,6 +23,7 @@ import GestionarSalida from "./GestionarSalida";
 import RangoBadge from "@/components/RangoBadge";
 import CuorumBar from "@/components/CuorumBar";
 import CierreCountdown from "@/components/CierreCountdown";
+import PortadaCover from "@/components/PortadaCover";
 
 const TOAST_MENSAJES: Record<string, string> = {
   "calificaciones-enviadas": "¡Calificaciones enviadas!",
@@ -109,7 +110,7 @@ export default async function SalidaDetallePage({
     supabase
       .from("salidas")
       .select(
-        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cierre_inscripcion, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, edad_min, edad_max, host_id",
+        "id, titulo, descripcion, punto_encuentro_texto, punto_encuentro_lat, punto_encuentro_lng, fecha_hora, cierre_inscripcion, cupos_total, cupos_ocupados, participantes_minimos, transporte, categoria, tipo_otro, costos, que_llevar, estado, es_privada, edad_min, edad_max, host_id, imagen_portada",
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -603,6 +604,17 @@ export default async function SalidaDetallePage({
           ✅ Salida publicada — compartila con tu gente.
         </div>
       ) : null}
+
+      {/* ─── Portada (banner del header, antes del título) ─── */}
+      <div className="-mx-6 mt-5 aspect-[16/9] w-[calc(100%+3rem)] overflow-hidden sm:rounded-2xl">
+        <PortadaCover
+          imagenPortada={salida!.imagen_portada}
+          categoria={salida!.categoria}
+          tipoOtro={salida!.tipo_otro}
+          titulo={salida!.titulo}
+          iconClassName="text-7xl"
+        />
+      </div>
 
       {/* ─── Header: título, host, estado ─── */}
       <header className="mt-6">
