@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 const TRANSPORTES = [
@@ -12,18 +13,32 @@ const TRANSPORTES = [
   "otro",
 ] as const;
 
-type CreateResult = { error: string } | undefined;
+type Result = { error: string } | undefined;
 
-export async function createSalidaAction(formData: FormData): Promise<CreateResult> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type ParsedSalida = {
+  titulo: string;
+  descripcion: string | null;
+  punto_encuentro_texto: string | null;
+  punto_encuentro_lat: number | null;
+  punto_encuentro_lng: number | null;
+  fecha: Date;
+  cupos_total: number;
+  participantes_minimos: number | null;
+  transporte: string;
+  categoria: string | null;
+  tipo_otro: string | null;
+  costos: Array<{ concepto: string; monto: number }>;
+  que_llevar: string | null;
+  es_privada: boolean;
+  cierre_inscripcion: string | null;
+  edad_min: number | null;
+  edad_max: number | null;
+};
 
-  if (!user) {
-    return { error: "Necesitás iniciar sesión." };
-  }
-
+// Parseo + validación compartidos por crear y editar.
+function parseSalidaForm(
+  formData: FormData,
+): { error: string } | { values: ParsedSalida } {
   const titulo = String(formData.get("titulo") ?? "").trim();
   const descripcion = String(formData.get("descripcion") ?? "")
     .trim()
@@ -64,14 +79,12 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
     return { error: "Elegí cómo se llega." };
   }
 
-  // Tipo "Otro" exige especificar cuál (igual que el transporte).
   if (categoria === "otro" && !tipoOtro) {
     return { error: "Contanos qué tipo de salida es." };
   }
 
-  // "Otro" exige especificar cuál (cierra el bug de "Otro sin completar").
-  // Como transporte tiene CHECK en la DB, guardamos el detalle prefijado en la
-  // descripción para no perder la info.
+  // "Otro" exige especificar cuál. Como transporte tiene CHECK en la DB,
+  // guardamos el detalle prefijado en la descripción para no perder la info.
   let descripcionFinal = descripcion;
   if (transporte === "otro") {
     const otroTxt = String(formData.get("transporte_otro") ?? "")
@@ -137,18 +150,14 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
     costos = [];
   }
 
-  const { data, error } = await supabase
-    .from("salidas")
-    .insert({
-      host_id: user.id,
-      tipo: "rio",
-      estado: "abierta",
+  return {
+    values: {
       titulo,
       descripcion: descripcionFinal || null,
       punto_encuentro_texto: punto || null,
       punto_encuentro_lat: lat != null && Number.isFinite(lat) ? lat : null,
       punto_encuentro_lng: lng != null && Number.isFinite(lng) ? lng : null,
-      fecha_hora: fecha.toISOString(),
+      fecha,
       cupos_total: cuposRaw,
       participantes_minimos: participantesMinimos,
       transporte,
@@ -160,6 +169,47 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
       cierre_inscripcion: cierreInscripcion,
       edad_min: edadMin,
       edad_max: edadMax,
+    },
+  };
+}
+
+export async function createSalidaAction(formData: FormData): Promise<Result> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Necesitás iniciar sesión." };
+  }
+
+  const parsed = parseSalidaForm(formData);
+  if ("error" in parsed) return parsed;
+  const v = parsed.values;
+
+  const { data, error } = await supabase
+    .from("salidas")
+    .insert({
+      host_id: user.id,
+      tipo: "rio",
+      estado: "abierta",
+      titulo: v.titulo,
+      descripcion: v.descripcion,
+      punto_encuentro_texto: v.punto_encuentro_texto,
+      punto_encuentro_lat: v.punto_encuentro_lat,
+      punto_encuentro_lng: v.punto_encuentro_lng,
+      fecha_hora: v.fecha.toISOString(),
+      cupos_total: v.cupos_total,
+      participantes_minimos: v.participantes_minimos,
+      transporte: v.transporte,
+      categoria: v.categoria,
+      tipo_otro: v.tipo_otro,
+      costos: v.costos,
+      que_llevar: v.que_llevar,
+      es_privada: v.es_privada,
+      cierre_inscripcion: v.cierre_inscripcion,
+      edad_min: v.edad_min,
+      edad_max: v.edad_max,
     })
     .select("id")
     .single();
@@ -169,4 +219,86 @@ export async function createSalidaAction(formData: FormData): Promise<CreateResu
   }
 
   redirect(`/salida/${data.id}?nueva=1`);
+}
+
+export async function updateSalidaAction(
+  salidaId: string,
+  formData: FormData,
+): Promise<Result> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Necesitás iniciar sesión." };
+  }
+
+  const { data: salida } = await supabase
+    .from("salidas")
+    .select("host_id, estado, fecha_hora, cupos_ocupados")
+    .eq("id", salidaId)
+    .maybeSingle();
+
+  if (!salida) return { error: "No encontramos la salida." };
+  if (salida.host_id !== user.id) {
+    return { error: "Solo el organizador puede editar la salida." };
+  }
+  if (salida.estado !== "abierta") {
+    return { error: "Solo se puede editar una salida abierta." };
+  }
+  if (new Date(salida.fecha_hora).getTime() < Date.now()) {
+    return { error: "No se puede editar una salida que ya pasó." };
+  }
+
+  const parsed = parseSalidaForm(formData);
+  if ("error" in parsed) return parsed;
+  const v = parsed.values;
+
+  if (v.fecha.getTime() < Date.now()) {
+    return { error: "La fecha no puede estar en el pasado." };
+  }
+
+  // No permitir bajar los cupos por debajo de los ya aceptados.
+  const { count: aceptados } = await supabase
+    .from("participaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("salida_id", salidaId)
+    .eq("estado", "aceptado");
+  const yaAceptados = aceptados ?? 0;
+  if (v.cupos_total < yaAceptados) {
+    return {
+      error: `Ya tenés ${yaAceptados} ${yaAceptados === 1 ? "persona aceptada" : "personas aceptadas"}: los cupos no pueden ser menos.`,
+    };
+  }
+
+  const { error } = await supabase
+    .from("salidas")
+    .update({
+      titulo: v.titulo,
+      descripcion: v.descripcion,
+      punto_encuentro_texto: v.punto_encuentro_texto,
+      punto_encuentro_lat: v.punto_encuentro_lat,
+      punto_encuentro_lng: v.punto_encuentro_lng,
+      fecha_hora: v.fecha.toISOString(),
+      cupos_total: v.cupos_total,
+      participantes_minimos: v.participantes_minimos,
+      transporte: v.transporte,
+      categoria: v.categoria,
+      tipo_otro: v.tipo_otro,
+      costos: v.costos,
+      que_llevar: v.que_llevar,
+      es_privada: v.es_privada,
+      cierre_inscripcion: v.cierre_inscripcion,
+      edad_min: v.edad_min,
+      edad_max: v.edad_max,
+    })
+    .eq("id", salidaId);
+
+  if (error) {
+    return { error: error.message ?? "No pudimos guardar los cambios." };
+  }
+
+  revalidatePath(`/salida/${salidaId}`);
+  redirect(`/salida/${salidaId}`);
 }

@@ -19,6 +19,7 @@ import HostPanel, { type Pendiente } from "./HostPanel";
 import ChatTripulacion from "./ChatTripulacion";
 import AportesSection from "./AportesSection";
 import SalidaTabs from "./SalidaTabs";
+import GestionarSalida from "./GestionarSalida";
 import RangoBadge from "@/components/RangoBadge";
 import CuorumBar from "@/components/CuorumBar";
 import CierreCountdown from "@/components/CierreCountdown";
@@ -333,6 +334,16 @@ export default async function SalidaDetallePage({
     !isFinalizadaOPasada &&
     !isCancelada;
 
+  // Gestión del host (botón en el header).
+  const puedeEditar =
+    isHost && salida!.estado === "abierta" && !isFinalizadaOPasada && !isCancelada;
+  const puedeCancelar =
+    isHost &&
+    (salida!.estado === "abierta" || salida!.estado === "completa") &&
+    !isFinalizadaOPasada &&
+    !isCancelada;
+  const mostrarGestionar = isHost && (puedeEditar || puedeCancelar);
+
   // ─── Panel "Info" ──────────────────────────────────────────────────────
   const infoPanel = (
     <div className="space-y-3">
@@ -575,7 +586,16 @@ export default async function SalidaDetallePage({
         >
           <span aria-hidden>←</span> Volver al feed
         </Link>
-        <IconoCompartirHeader {...shareProps} />
+        <div className="flex items-center gap-2">
+          {mostrarGestionar ? (
+            <GestionarSalida
+              salidaId={salida!.id}
+              puedeEditar={puedeEditar}
+              puedeCancelar={puedeCancelar}
+            />
+          ) : null}
+          <IconoCompartirHeader {...shareProps} />
+        </div>
       </div>
 
       {recienCreada ? (

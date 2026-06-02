@@ -3,7 +3,37 @@
 import { useMemo, useState, useTransition } from "react";
 import { CATEGORIAS, TRANSPORTE_LABEL } from "@/lib/format";
 import MapPicker from "@/components/map/MapPicker";
-import { createSalidaAction } from "./actions";
+import { createSalidaAction, updateSalidaAction } from "./actions";
+
+export type SalidaInicial = {
+  id: string;
+  categoria: string | null;
+  tipoOtro: string | null;
+  transporte: string;
+  transporteOtro?: string;
+  fechaHoraISO: string;
+  puntoEncuentro: string | null;
+  lat: number | null;
+  lng: number | null;
+  titulo: string;
+  cupos: number;
+  minimo: number | null;
+  costos: { concepto: string; monto: number }[];
+  descripcion: string | null;
+  queLlevar: string | null;
+  esPrivada: boolean;
+  cierreInscripcionISO: string | null;
+  edadMin: number | null;
+  edadMax: number | null;
+};
+
+// ISO (UTC) → valor para <input type="datetime-local"> en hora local del browser.
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
 
 type CostoRow = { id: string; concepto: string; monto: string };
 
@@ -54,32 +84,60 @@ function formatPesos(n: number) {
   }).format(n);
 }
 
-export default function NuevaSalidaForm() {
+export default function NuevaSalidaForm({
+  initial,
+  aceptados = 0,
+}: {
+  initial?: SalidaInicial;
+  aceptados?: number;
+}) {
+  const isEdit = !!initial;
   const [step, setStep] = useState(1);
 
-  // Datos acumulados.
-  const [categoria, setCategoria] = useState<string>("");
-  const [tipoOtro, setTipoOtro] = useState("");
-  const [transporte, setTransporte] = useState<string>("");
-  const [transporteOtro, setTransporteOtro] = useState("");
-  const [fechaHora, setFechaHora] = useState("");
-  const [puntoEncuentro, setPuntoEncuentro] = useState("");
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [titulo, setTitulo] = useState("");
-  const [cupos, setCupos] = useState(4);
-  const [minimo, setMinimo] = useState<number | null>(null);
-  const [costos, setCostos] = useState<CostoRow[]>([]);
-  const [descripcion, setDescripcion] = useState("");
-  const [queLlevar, setQueLlevar] = useState("");
-  const [esPrivada, setEsPrivada] = useState(false);
+  // Datos acumulados (precargados si estamos editando).
+  const [categoria, setCategoria] = useState<string>(initial?.categoria ?? "");
+  const [tipoOtro, setTipoOtro] = useState(initial?.tipoOtro ?? "");
+  const [transporte, setTransporte] = useState<string>(initial?.transporte ?? "");
+  const [transporteOtro, setTransporteOtro] = useState(
+    initial?.transporteOtro ?? "",
+  );
+  const [fechaHora, setFechaHora] = useState(
+    initial ? isoToLocalInput(initial.fechaHoraISO) : "",
+  );
+  const [puntoEncuentro, setPuntoEncuentro] = useState(
+    initial?.puntoEncuentro ?? "",
+  );
+  const [lat, setLat] = useState<number | null>(initial?.lat ?? null);
+  const [lng, setLng] = useState<number | null>(initial?.lng ?? null);
+  const [titulo, setTitulo] = useState(initial?.titulo ?? "");
+  const [cupos, setCupos] = useState(initial?.cupos ?? 4);
+  const [minimo, setMinimo] = useState<number | null>(initial?.minimo ?? null);
+  const [costos, setCostos] = useState<CostoRow[]>(() =>
+    (initial?.costos ?? []).map((c) => ({
+      id: nuevoId(),
+      concepto: c.concepto,
+      monto: String(c.monto),
+    })),
+  );
+  const [descripcion, setDescripcion] = useState(initial?.descripcion ?? "");
+  const [queLlevar, setQueLlevar] = useState(initial?.queLlevar ?? "");
+  const [esPrivada, setEsPrivada] = useState(initial?.esPrivada ?? false);
   const [cierreOpcion, setCierreOpcion] = useState<
     "inicio" | "1d" | "2d" | "3d" | "custom"
-  >("inicio");
-  const [cierreCustom, setCierreCustom] = useState("");
-  const [sinRestriccionEdad, setSinRestriccionEdad] = useState(true);
-  const [edadMin, setEdadMin] = useState(18);
-  const [edadMax, setEdadMax] = useState(65);
+  >(initial?.cierreInscripcionISO ? "custom" : "inicio");
+  const [cierreCustom, setCierreCustom] = useState(
+    initial?.cierreInscripcionISO
+      ? isoToLocalInput(initial.cierreInscripcionISO)
+      : "",
+  );
+  const [sinRestriccionEdad, setSinRestriccionEdad] = useState(
+    initial ? initial.edadMin == null && initial.edadMax == null : true,
+  );
+  const [edadMin, setEdadMin] = useState(initial?.edadMin ?? 18);
+  const [edadMax, setEdadMax] = useState(initial?.edadMax ?? 65);
+
+  // Editando: no se pueden bajar los cupos por debajo de los ya aceptados.
+  const cuposMin = Math.max(2, aceptados);
 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -224,7 +282,10 @@ export default function NuevaSalidaForm() {
     );
 
     startTransition(async () => {
-      const result = await createSalidaAction(fd);
+      const result =
+        isEdit && initial
+          ? await updateSalidaAction(initial.id, fd)
+          : await createSalidaAction(fd);
       if (result && "error" in result) setError(result.error);
     });
   }
@@ -443,8 +504,8 @@ export default function NuevaSalidaForm() {
               <div className="flex items-center justify-between rounded-2xl border border-tinta/15 bg-white px-4 py-3">
                 <button
                   type="button"
-                  onClick={() => setCupos((c) => Math.max(2, c - 1))}
-                  disabled={cupos <= 2}
+                  onClick={() => setCupos((c) => Math.max(cuposMin, c - 1))}
+                  disabled={cupos <= cuposMin}
                   className="grid h-10 w-10 place-items-center rounded-full bg-crema text-xl font-semibold text-noche disabled:opacity-40"
                   aria-label="Quitar un cupo"
                 >
@@ -466,6 +527,11 @@ export default function NuevaSalidaForm() {
                   +
                 </button>
               </div>
+              {isEdit && aceptados > 0 ? (
+                <p className="mt-1 text-xs text-tinta/50">
+                  Ya {aceptados === 1 ? "aceptaste 1 persona" : `aceptaste ${aceptados} personas`}: no podés bajar de ahí.
+                </p>
+              ) : null}
             </div>
 
             <div>
@@ -930,7 +996,13 @@ export default function NuevaSalidaForm() {
             disabled={pending}
             className="inline-flex h-12 flex-[2] items-center justify-center rounded-2xl bg-rio px-6 text-base font-semibold text-crema shadow-sm shadow-rio/20 transition active:scale-[0.98] disabled:opacity-60"
           >
-            {pending ? "Publicando…" : "Publicar salida"}
+            {pending
+              ? isEdit
+                ? "Guardando…"
+                : "Publicando…"
+              : isEdit
+                ? "Guardar cambios"
+                : "Publicar salida"}
           </button>
         )}
       </div>

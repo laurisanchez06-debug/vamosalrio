@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BottomNav from "@/components/BottomNav";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import RealtimeSolicitudes from "@/components/RealtimeSolicitudes";
 
 export default async function AppLayout({
   children,
@@ -16,6 +17,7 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
 
   let solicitudesPendientes = 0;
+  let hostSalidaIds: string[] = [];
   if (user) {
     const { data: prof } = await supabase
       .from("profiles")
@@ -33,13 +35,13 @@ export default async function AppLayout({
       .from("salidas")
       .select("id")
       .eq("host_id", user.id);
-    const ids = (misSalidas ?? []).map((s) => s.id);
-    if (ids.length > 0) {
+    hostSalidaIds = (misSalidas ?? []).map((s) => s.id);
+    if (hostSalidaIds.length > 0) {
       const { count } = await supabase
         .from("participaciones")
         .select("id", { count: "exact", head: true })
         .eq("estado", "pendiente")
-        .in("salida_id", ids);
+        .in("salida_id", hostSalidaIds);
       solicitudesPendientes = count ?? 0;
     }
   }
@@ -47,6 +49,9 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen bg-crema">
       <main className="mx-auto max-w-md pb-24">{children}</main>
+      {user && hostSalidaIds.length > 0 ? (
+        <RealtimeSolicitudes userId={user.id} salidaIds={hostSalidaIds} />
+      ) : null}
       <PwaInstallPrompt />
       <BottomNav solicitudesPendientes={solicitudesPendientes} />
     </div>
