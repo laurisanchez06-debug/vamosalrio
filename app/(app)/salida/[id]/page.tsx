@@ -343,15 +343,19 @@ export default async function SalidaDetallePage({
     !isFinalizadaOPasada &&
     !isCancelada;
 
-  // Gestión del host (botón en el header).
+  // Gestión del host (botón "Gestionar" en el header).
+  const estadoActivo =
+    salida!.estado === "abierta" || salida!.estado === "completa";
+  // Editar: solo mientras la salida sigue en el futuro y abierta.
   const puedeEditar =
     isHost && salida!.estado === "abierta" && !isFinalizadaOPasada && !isCancelada;
-  const puedeCancelar =
-    isHost &&
-    (salida!.estado === "abierta" || salida!.estado === "completa") &&
-    !isFinalizadaOPasada &&
-    !isCancelada;
-  const mostrarGestionar = isHost && (puedeEditar || puedeCancelar);
+  // Finalizar / Cancelar: el host puede mientras la salida siga activa
+  // (abierta/completa) y no esté cancelada — INCLUIDA una salida ya vencida.
+  // Finalizar es justamente la acción posterior a que la salida ocurrió.
+  const puedeFinalizar = isHost && estadoActivo && !isCancelada;
+  const puedeCancelar = isHost && estadoActivo && !isCancelada;
+  const mostrarGestionar =
+    isHost && (puedeEditar || puedeFinalizar || puedeCancelar);
 
   // ─── Panel "Info" ──────────────────────────────────────────────────────
   const infoPanel = (
@@ -600,6 +604,7 @@ export default async function SalidaDetallePage({
             <GestionarSalida
               salidaId={salida!.id}
               puedeEditar={puedeEditar}
+              puedeFinalizar={puedeFinalizar}
               puedeCancelar={puedeCancelar}
             />
           ) : null}

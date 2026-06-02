@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import Toast from "@/components/Toast";
-import { cancelarSalidaAction } from "./actions";
+import { cancelarSalidaAction, finalizarSalidaAction } from "./actions";
 
 const MOTIVOS = [
   { value: "fuerza_mayor", label: "Clima / emergencia / fuerza mayor" },
@@ -14,20 +15,24 @@ const MOTIVOS = [
 export default function GestionarSalida({
   salidaId,
   puedeEditar,
+  puedeFinalizar,
   puedeCancelar,
 }: {
   salidaId: string;
   puedeEditar: boolean;
+  puedeFinalizar: boolean;
   puedeCancelar: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [cancelAbierto, setCancelAbierto] = useState(false);
   const [cancelMotivo, setCancelMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
   const [toast, setToast] = useState<{ msg: string; tipo: "info" | "error" } | null>(
     null,
   );
   const [, startTransition] = useTransition();
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +49,28 @@ export default function GestionarSalida({
   function showToast(msg: string, tipo: "info" | "error" = "info") {
     setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3000);
+  }
+
+  function finalizarSalida() {
+    if (typeof window === "undefined") return;
+    if (
+      !window.confirm(
+        "¿Marcar la salida como finalizada? Vas a poder calificar a la tripulación.",
+      )
+    ) {
+      return;
+    }
+    setAbierto(false);
+    setFinalizando(true);
+    startTransition(async () => {
+      const r = await finalizarSalidaAction(salidaId);
+      setFinalizando(false);
+      if ("error" in r) showToast(r.error, "error");
+      else {
+        showToast("Salida finalizada ✓");
+        router.refresh();
+      }
+    });
   }
 
   function confirmarCancelacion() {
@@ -97,6 +124,17 @@ export default function GestionarSalida({
             >
               <span aria-hidden>✏️</span> Editar salida
             </Link>
+          ) : null}
+          {puedeFinalizar ? (
+            <button
+              type="button"
+              onClick={finalizarSalida}
+              disabled={finalizando}
+              className="flex w-full items-center gap-2 border-t border-tinta/5 px-4 py-3 text-left text-sm font-medium text-rio transition hover:bg-crema disabled:opacity-60"
+            >
+              <span aria-hidden>🏁</span>{" "}
+              {finalizando ? "Finalizando…" : "Finalizar salida"}
+            </button>
           ) : null}
           {puedeCancelar ? (
             <button

@@ -18,6 +18,10 @@ export default async function FeedPage({
   // Las acciones (solicitar unirse) sí piden sesión, en la página de la salida.
   const supabase = createClient();
 
+  // Solo salidas que todavía no ocurrieron: una salida ya vencida que el host
+  // aún no finalizó sigue en estado 'abierta', pero no debe perdurar en el feed.
+  const ahoraISO = new Date().toISOString();
+
   const { data } = await supabase
     .from("salidas")
     .select(
@@ -26,6 +30,7 @@ export default async function FeedPage({
     )
     .eq("estado", "abierta")
     .eq("es_privada", false)
+    .gte("fecha_hora", ahoraISO)
     .order("fecha_hora", { ascending: true });
 
   const salidas = (data ?? []) as unknown as SalidaFeed[];
