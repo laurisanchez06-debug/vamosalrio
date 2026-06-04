@@ -139,7 +139,7 @@ export async function emailSalidaFinalizada(p: {
     `Calificá tu salida "${p.titulo}"`,
     layout({
       titulo: "¿Cómo estuvo la salida?",
-      cuerpo: `Terminó <strong>"${esc(p.titulo)}"</strong>. Dejá tu calificación y una referencia a la tripulación — ayuda a que todos salgan más tranquilos la próxima.`,
+      cuerpo: `Terminó <strong>"${esc(p.titulo)}"</strong>. Dejá tu calificación y una referencia a la tripulación, así todos salen más tranquilos la próxima.`,
       ctaText: "Calificar la salida",
       ctaHref: `${appUrl()}/salida/${p.salidaId}/calificar`,
     }),
@@ -152,7 +152,7 @@ export async function emailSalidaCancelada(p: { to: string; titulo: string }) {
     `Se canceló "${p.titulo}"`,
     layout({
       titulo: "Se canceló la salida",
-      cuerpo: `El organizador canceló <strong>"${esc(p.titulo)}"</strong>. Disculpá las molestias — buscá otra salida para sumarte al río.`,
+      cuerpo: `El organizador canceló <strong>"${esc(p.titulo)}"</strong>. Disculpá las molestias. Buscá otra salida para sumarte al río.`,
       ctaText: "Ver otras salidas",
       ctaHref: `${appUrl()}/feed`,
     }),
@@ -207,7 +207,7 @@ export async function emailInvitadoSeBajo(p: {
     `${p.invitado} se bajó de "${p.titulo}"`,
     layout({
       titulo: "Un tripulante se bajó",
-      cuerpo: `<strong>${esc(p.invitado)}</strong> ya no va a <strong>"${esc(p.titulo)}"</strong>. Se liberó un lugar — podés aceptar a alguien de la lista de espera.`,
+      cuerpo: `<strong>${esc(p.invitado)}</strong> ya no va a <strong>"${esc(p.titulo)}"</strong>. Se liberó un lugar, así que podés aceptar a alguien de la lista de espera.`,
       ctaText: "Ver la salida",
       ctaHref: `${appUrl()}/salida/${p.salidaId}`,
     }),

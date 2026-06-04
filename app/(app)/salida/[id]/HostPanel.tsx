@@ -75,7 +75,7 @@ export default function HostPanel({
 }: Props) {
   const avisoAportes =
     aportesSinCubrir > 0
-      ? `Hay ${aportesSinCubrir} ${aportesSinCubrir === 1 ? "aporte sin cubrir" : "aportes sin cubrir"} — recordá coordinarlo con tu tripulación.`
+      ? `Hay ${aportesSinCubrir} ${aportesSinCubrir === 1 ? "aporte sin cubrir" : "aportes sin cubrir"}. Recordá coordinarlo con tu tripulación.`
       : null;
   const [procesandoId, setProcesandoId] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState(false);

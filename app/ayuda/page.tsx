@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Ayuda — vamosalrio",
+  title: "Ayuda · vamosalrio",
   description: "Preguntas frecuentes sobre vamosalrio: cómo crear salidas, sumarte, calificaciones, seguridad y soporte.",
 };
 

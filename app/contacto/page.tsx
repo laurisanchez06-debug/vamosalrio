@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalShell from "@/components/LegalShell";
 
 export const metadata: Metadata = {
-  title: "Contacto — vamosalrio",
+  title: "Contacto · vamosalrio",
   description: "Escribinos: comercial@kapplasrl.com",
 };
 

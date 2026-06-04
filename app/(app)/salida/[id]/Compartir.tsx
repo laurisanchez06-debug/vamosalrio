@@ -18,7 +18,7 @@ function buildMensaje({
 }: Props) {
   const piezas = [
     `¡Mirá esta salida al río! ${titulo}`,
-    `— ${fechaTexto}`,
+    `el ${fechaTexto}`,
   ];
   if (punto) piezas.push(`en ${punto}`);
   return `${piezas.join(" ")}. Quedan ${cuposLibres} cupos libres. Sumate:`;

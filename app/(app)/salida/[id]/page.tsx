@@ -614,7 +614,7 @@ export default async function SalidaDetallePage({
 
       {recienCreada ? (
         <div className="mt-4 rounded-2xl bg-rio/10 px-4 py-3 text-sm font-medium text-rio">
-          ✅ Salida publicada — compartila con tu gente.
+          ✅ Salida publicada. Compartila con tu gente.
         </div>
       ) : null}
 

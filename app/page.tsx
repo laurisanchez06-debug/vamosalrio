@@ -45,7 +45,7 @@ const PASOS = [
     n: "1",
     titulo: "Creá o sumate a una salida",
     texto:
-      "Armá la tuya en un minuto —fecha, punto, qué llevar— o pedí sumarte a la de otro con una presentación.",
+      "Armá la tuya en un minuto (fecha, punto, qué llevar) o pedí sumarte a la de otro con una presentación.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
         <circle cx="12" cy="12" r="9" />
@@ -68,7 +68,7 @@ const PASOS = [
   },
   {
     n: "3",
-    titulo: "Al río — y después se califican",
+    titulo: "Al río, y después se califican",
     texto:
       "Punto, horario y costos compartidos, todo en un lugar. Al volver, host e invitados se califican.",
     icon: (
@@ -189,7 +189,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-crema/85 sm:text-xl">
-              Un paseo en lancha, un día de playa, pesca o kayak — salidas al
+              Un paseo en lancha, un día de playa, pesca o kayak. Salidas al
               río con gente que ya sabés quién es. Armás la tuya o te sumás a la
               de otro, ves quién va antes de salir, y se califican después.{" "}
               <span className="font-semibold text-crema">
@@ -233,7 +233,7 @@ export default function LandingPage() {
               <span className="font-semibold text-tinta">
                 Te conectamos con la gente antes de salir
               </span>{" "}
-              — en lancha, a la playa, de pesca o de camping.
+              para ir en lancha, a la playa, de pesca o de camping.
             </p>
           </div>
         </div>

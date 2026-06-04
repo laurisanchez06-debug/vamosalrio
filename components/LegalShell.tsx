@@ -20,7 +20,7 @@ export default function LegalShell({ titulo, actualizado, borrador, children }: 
 
         {borrador ? (
           <p className="mt-6 rounded-2xl border border-arena/30 bg-arena/10 px-4 py-3 text-sm font-semibold text-arena">
-            BORRADOR — pendiente de revisión legal.
+            BORRADOR: pendiente de revisión legal.
           </p>
         ) : null}
 

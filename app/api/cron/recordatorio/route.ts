@@ -112,7 +112,7 @@ export async function GET(request: Request) {
         partes.push(
           conf >= min
             ? "✅ ¡Ya tienen cuórum!"
-            : `⚠️ Todavía no llegaste al mínimo de ${min} participantes — si querés cancelar sin penalidad, podés hacerlo desde la salida.`,
+            : `⚠️ Todavía no llegaste al mínimo de ${min} participantes. Si querés cancelar sin penalidad, podés hacerlo desde la salida.`,
         );
       }
       const hostEmail = await emailDe(s.host_id);

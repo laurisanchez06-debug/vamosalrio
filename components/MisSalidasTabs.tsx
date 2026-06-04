@@ -141,7 +141,7 @@ function Organizadas({ items }: { items: MiSalida[] }) {
           {s.necesitaFinalizar ? (
             <div className="mt-3 rounded-xl bg-arena/15 p-3 text-xs text-arena">
               <p className="font-medium">
-                Terminó — finalizala para habilitar las calificaciones.
+                Terminó. Finalizala para habilitar las calificaciones.
               </p>
               <Link
                 href={`/salida/${s.id}`}

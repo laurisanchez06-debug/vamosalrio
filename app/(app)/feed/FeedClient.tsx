@@ -363,7 +363,7 @@ export default function FeedClient({ salidas }: { salidas: SalidaFeed[] }) {
         fecha === "finde" ? (
           <div className="mt-3 rounded-2xl border border-dashed border-tinta/15 bg-white/50 px-4 py-8 text-center">
             <p className="text-sm text-tinta/60">
-              No hay salidas este finde — mirá las de esta semana.
+              No hay salidas este finde. Mirá las de esta semana.
             </p>
             <button
               type="button"

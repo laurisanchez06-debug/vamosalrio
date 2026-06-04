@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalShell, { Clausula } from "@/components/LegalShell";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad — vamosalrio",
+  title: "Política de Privacidad · vamosalrio",
   description:
     "Qué datos recolecta vamosalrio, para qué los usa y cómo los protege. Operada por Kappla SRL.",
 };

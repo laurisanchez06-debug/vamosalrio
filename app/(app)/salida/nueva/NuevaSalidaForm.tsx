@@ -522,7 +522,7 @@ export default function NuevaSalidaForm({
               {puntoEncuentro.trim() && (lat == null || lng == null) ? (
                 <p className="mt-2 rounded-xl bg-arena/10 px-3 py-2 text-xs leading-relaxed text-arena">
                   📍 Marcá el punto en el mapa para que tus invitados sepan cómo
-                  llegar — sobre todo si no tiene dirección exacta.
+                  llegar, sobre todo si no tiene dirección exacta.
                 </p>
               ) : null}
             </div>
@@ -784,7 +784,7 @@ export default function NuevaSalidaForm({
         {step === 5 ? (
           <div className="space-y-6">
             <p className="rounded-2xl bg-rio/5 px-4 py-3 text-sm text-tinta/70">
-              Todo esto es opcional — dejá lo que no uses como está.
+              Todo esto es opcional. Dejá lo que no uses como está.
             </p>
 
             {/* Mínimo para salir (cuórum) */}

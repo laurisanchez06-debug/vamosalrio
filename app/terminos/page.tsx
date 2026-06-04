@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalShell, { Clausula } from "@/components/LegalShell";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones — vamosalrio",
+  title: "Términos y Condiciones · vamosalrio",
   description:
     "Términos y condiciones de uso de vamosalrio, operada por Kappla SRL.",
 };
@@ -113,8 +113,8 @@ export default function TerminosPage() {
             actividad coordinada a través de la Plataforma conlleva riesgos
             inherentes
           </strong>{" "}
-          —incluyendo, sin limitarse a, riesgos físicos, accidentes, lesiones,
-          daños materiales o, en casos extremos, riesgo de vida— y que participa{" "}
+          (incluyendo, sin limitarse a, riesgos físicos, accidentes, lesiones,
+          daños materiales o, en casos extremos, riesgo de vida) y que participa{" "}
           <strong>
             voluntariamente, por su propia decisión y bajo su exclusiva
             responsabilidad.
@@ -169,8 +169,8 @@ export default function TerminosPage() {
         </p>
         <p>
           El Usuario es el único responsable de tomar sus propias precauciones
-          al interactuar o encontrarse con otros Usuarios, incluyendo —pero no
-          limitado a— informarse sobre la persona, encontrarse en lugares
+          al interactuar o encontrarse con otros Usuarios, incluyendo (pero no
+          limitado a) informarse sobre la persona, encontrarse en lugares
           apropiados y avisar a terceros de confianza sobre sus planes.
         </p>
       </Clausula>
