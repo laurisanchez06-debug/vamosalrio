@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import BottomNav from "@/components/BottomNav";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import RealtimeSolicitudes from "@/components/RealtimeSolicitudes";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export default async function AppLayout({
   children,
@@ -52,6 +53,7 @@ export default async function AppLayout({
       {user && hostSalidaIds.length > 0 ? (
         <RealtimeSolicitudes userId={user.id} salidaIds={hostSalidaIds} />
       ) : null}
+      <ServiceWorkerRegister />
       <PwaInstallPrompt />
       <BottomNav solicitudesPendientes={solicitudesPendientes} />
     </div>

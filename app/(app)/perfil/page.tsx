@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RangoBadge from "@/components/RangoBadge";
 import ReferenciasRecibidas from "@/components/ReferenciasRecibidas";
+import PushToggle from "@/components/PushToggle";
 import { signOutAction } from "./actions";
 
 export default async function PerfilPage() {
@@ -111,6 +112,10 @@ export default async function PerfilPage() {
       </section>
 
       <ReferenciasRecibidas userId={user!.id} />
+
+      <section className="mt-8">
+        <PushToggle />
+      </section>
 
       <section className="mt-8 space-y-3">
         <Link

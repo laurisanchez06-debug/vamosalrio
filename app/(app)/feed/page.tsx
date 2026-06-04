@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import AutoToast from "@/components/AutoToast";
+import PushBanner from "@/components/PushBanner";
 import FeedClient, { type SalidaFeed } from "./FeedClient";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,11 @@ export default async function FeedPage({
   // El feed es de lectura pública: cualquiera puede ver las salidas abiertas.
   // Las acciones (solicitar unirse) sí piden sesión, en la página de la salida.
   const supabase = createClient();
+
+  // El banner de notificaciones solo tiene sentido para usuarios logueados.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Solo salidas que todavía no ocurrieron: una salida ya vencida que el host
   // aún no finalizó sigue en estado 'abierta', pero no debe perdurar en el feed.
@@ -45,6 +51,8 @@ export default async function FeedPage({
           Sumate a una o armá la tuya.
         </p>
       </header>
+
+      {user ? <PushBanner /> : null}
 
       <FeedClient salidas={salidas} />
 

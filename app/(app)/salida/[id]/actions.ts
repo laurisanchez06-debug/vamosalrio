@@ -15,6 +15,7 @@ import {
   emailSalidaCancelada,
   emailInvitadoSeBajo,
 } from "@/lib/email";
+import { enviarPushAUsuarios } from "@/lib/push/send";
 
 const MS_48H = 48 * 60 * 60 * 1000;
 
@@ -110,16 +111,25 @@ export async function solicitarParticipacionAction(
       emailDe(admin, salida.host_id),
       supabase.from("profiles").select("nombre").eq("id", user.id).maybeSingle(),
     ]);
+    const nombre = prof.data?.nombre ?? "Alguien";
+    const tituloSalida = salida.titulo ?? "tu salida";
     if (hostEmail) {
       await emailNuevaSolicitud({
         to: hostEmail,
-        solicitante: prof.data?.nombre ?? "Alguien",
-        titulo: salida.titulo ?? "tu salida",
+        solicitante: nombre,
+        titulo: tituloSalida,
         salidaId,
       });
     }
+    // Web push al host, al lado del email. Fire-and-forget: nunca rompe la
+    // solicitud (va dentro del mismo try/catch).
+    await enviarPushAUsuarios(salida.host_id, {
+      titulo: "Nueva solicitud 🌊",
+      cuerpo: `${nombre} quiere sumarse a ${tituloSalida}`,
+      url: "/mis-salidas",
+    });
   } catch {
-    // fire-and-forget: el mail nunca rompe la solicitud
+    // fire-and-forget: el mail/push nunca rompen la solicitud
   }
 
   return { ok: true };
