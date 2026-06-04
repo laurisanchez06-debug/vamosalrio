@@ -17,7 +17,7 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let solicitudesPendientes = 0;
+  let noLeidas = 0;
   let hostSalidaIds: string[] = [];
   if (user) {
     const { data: prof } = await supabase
@@ -31,20 +31,21 @@ export default async function AppLayout({
     // Primer ingreso: onboarding de bienvenida (salteable).
     if (prof && !prof.onboarding_completado) redirect("/bienvenida");
 
-    // Solicitudes pendientes en TODAS las salidas donde el usuario es host.
+    // Salidas donde el usuario es host: alimentan el realtime de solicitudes.
     const { data: misSalidas } = await supabase
       .from("salidas")
       .select("id")
       .eq("host_id", user.id);
     hostSalidaIds = (misSalidas ?? []).map((s) => s.id);
-    if (hostSalidaIds.length > 0) {
-      const { count } = await supabase
-        .from("participaciones")
-        .select("id", { count: "exact", head: true })
-        .eq("estado", "pendiente")
-        .in("salida_id", hostSalidaIds);
-      solicitudesPendientes = count ?? 0;
-    }
+
+    // Badge de la campana = notificaciones sin leer. Si la tabla todavía no
+    // existe (0022 sin aplicar), count es null → 0, sin romper la app.
+    const { count } = await supabase
+      .from("notificaciones")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("leida", false);
+    noLeidas = count ?? 0;
   }
 
   return (
@@ -55,7 +56,7 @@ export default async function AppLayout({
       ) : null}
       <ServiceWorkerRegister />
       <PwaInstallPrompt />
-      <BottomNav solicitudesPendientes={solicitudesPendientes} />
+      <BottomNav noLeidas={noLeidas} />
     </div>
   );
 }

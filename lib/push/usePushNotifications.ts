@@ -66,6 +66,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export function usePushNotifications() {
   const [estado, setEstado] = useState<PushEstado>("loading");
   const [trabajando, setTrabajando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setEstado(detectar());
@@ -75,12 +76,19 @@ export function usePushNotifications() {
   // y POSTea a /api/push/subscribe. Marca "granted" SOLO tras el 200 (no falso
   // activado, lección #4).
   const activar = useCallback(async (): Promise<boolean> => {
-    if (!soportado() || !VAPID_PUBLIC) return false;
+    setError(null);
+    if (!soportado() || !VAPID_PUBLIC) {
+      setError("Tu navegador no soporta notificaciones.");
+      return false;
+    }
     setTrabajando(true);
     try {
       const permiso = await Notification.requestPermission();
       if (permiso !== "granted") {
         setEstado(permiso === "denied" ? "denied" : "default");
+        if (permiso === "denied") {
+          setError("Bloqueaste las notificaciones en el navegador.");
+        }
         return false;
       }
 
@@ -103,38 +111,65 @@ export function usePushNotifications() {
         }),
       });
 
-      if (!res.ok) return false; // no marcamos activado si el guardado falló
+      if (!res.ok) {
+        // no marcamos activado si el guardado falló
+        setError("No pudimos guardar la suscripción. Probá de nuevo.");
+        return false;
+      }
       setEstado("granted");
       return true;
     } catch {
+      setError("No pudimos activar las notificaciones. Probá de nuevo.");
       return false;
     } finally {
       setTrabajando(false);
     }
   }, []);
 
-  // Desactivar: borra la sub local y en el server.
+  // Desactivar: unsubscribe en el navegador Y borrado en el server. Solo
+  // pasamos a "default" si AMBOS confirman; si algo falla, error visible.
   const desactivar = useCallback(async (): Promise<boolean> => {
-    if (!soportado()) return false;
+    setError(null);
+    if (!soportado()) {
+      setError("Tu navegador no soporta notificaciones.");
+      return false;
+    }
     setTrabajando(true);
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       const endpoint = sub?.endpoint;
-      if (sub) await sub.unsubscribe().catch(() => {});
-      await fetch("/api/push/unsubscribe", {
+
+      // 1) Borrar la fila en el server (con service-role).
+      const res = await fetch("/api/push/unsubscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ endpoint }),
-      }).catch(() => {});
+      });
+      if (!res.ok) {
+        setError("No pudimos desactivar en el servidor. Probá de nuevo.");
+        return false;
+      }
+
+      // 2) Cancelar la suscripción del navegador.
+      if (sub) {
+        const desuscripto = await sub.unsubscribe();
+        if (!desuscripto) {
+          setError("No pudimos cancelar la suscripción del navegador.");
+          return false;
+        }
+      }
+
+      // 3) Solo ahora, con ambos confirmados, actualizamos la UI.
       setEstado("default");
       return true;
     } catch {
+      setError("No pudimos desactivar las notificaciones. Probá de nuevo.");
       return false;
     } finally {
       setTrabajando(false);
     }
   }, []);
 
-  return { estado, trabajando, activar, desactivar };
+  return { estado, trabajando, error, activar, desactivar };
 }

@@ -16,6 +16,7 @@ import {
   emailInvitadoSeBajo,
 } from "@/lib/email";
 import { enviarPushAUsuarios } from "@/lib/push/send";
+import { crearNotificacion } from "@/lib/notificaciones";
 
 const MS_48H = 48 * 60 * 60 * 1000;
 
@@ -91,12 +92,16 @@ export async function solicitarParticipacionAction(
 
   const mensajeLimpio = (mensaje ?? "").trim().slice(0, 300);
 
-  const { error } = await supabase.from("participaciones").insert({
-    salida_id: salidaId,
-    user_id: user.id,
-    estado: "pendiente",
-    mensaje: mensajeLimpio || null,
-  });
+  const { data: nuevaPart, error } = await supabase
+    .from("participaciones")
+    .insert({
+      salida_id: salidaId,
+      user_id: user.id,
+      estado: "pendiente",
+      mensaje: mensajeLimpio || null,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     if (error.code === "23505") return { error: "Ya pediste sumarte a esta salida." };
@@ -126,11 +131,20 @@ export async function solicitarParticipacionAction(
     await enviarPushAUsuarios(salida.host_id, {
       titulo: "Nueva solicitud 🌊",
       cuerpo: `${nombre} quiere sumarse a ${tituloSalida}`,
-      url: "/mis-salidas",
+      url: "/notificaciones",
     });
   } catch {
     // fire-and-forget: el mail/push nunca rompen la solicitud
   }
+
+  // Notificación in-app al host (centro de notificaciones).
+  await crearNotificacion({
+    userId: salida.host_id,
+    tipo: "solicitud_recibida",
+    salidaId,
+    actorId: user.id,
+    participacionId: nuevaPart?.id ?? null,
+  });
 
   return { ok: true };
 }
@@ -176,6 +190,7 @@ export async function aceptarSolicitudAction(
   if (sErr) return { error: sErr.message };
 
   revalidatePath(`/salida/${salidaId}`);
+  revalidatePath("/notificaciones");
 
   try {
     const { data: part } = await supabase
@@ -192,6 +207,13 @@ export async function aceptarSolicitudAction(
           salidaId,
         });
       }
+      await crearNotificacion({
+        userId: part.user_id,
+        tipo: "solicitud_aceptada",
+        salidaId,
+        actorId: user.id,
+        participacionId,
+      });
     }
   } catch {
     // fire-and-forget
@@ -226,6 +248,7 @@ export async function rechazarSolicitudAction(
   if (error) return { error: error.message };
 
   revalidatePath(`/salida/${salidaId}`);
+  revalidatePath("/notificaciones");
 
   try {
     const { data: part } = await supabase
@@ -241,6 +264,13 @@ export async function rechazarSolicitudAction(
           titulo: salida.titulo ?? "la salida",
         });
       }
+      await crearNotificacion({
+        userId: part.user_id,
+        tipo: "solicitud_rechazada",
+        salidaId,
+        actorId: user.id,
+        participacionId,
+      });
     }
   } catch {
     // fire-and-forget

@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GENEROS, calcularEdad } from "@/lib/format";
+import { rateLimit } from "@/lib/rateLimit";
 
 function safeRedirect(value: FormDataEntryValue | null) {
   const s = String(value ?? "").trim();
@@ -16,8 +18,25 @@ export async function signUpAction(formData: FormData) {
   const fechaNacimiento = String(formData.get("fecha_nacimiento") ?? "").trim();
   const genero = String(formData.get("genero") ?? "").trim();
   const aceptaTerminos = String(formData.get("acepta_terminos") ?? "") === "1";
+  // Honeypot: campo oculto que los humanos no ven. Si viene lleno, es un bot.
+  const honeypot = String(formData.get("website") ?? "").trim();
   const redirectTo = safeRedirect(formData.get("redirect"));
   const qs = redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : "";
+
+  // Bot detectado por honeypot: cortamos sin crear nada ni dar pistas.
+  if (honeypot) {
+    redirect("/");
+  }
+
+  // Rate limit por IP: máximo 5 registros por hora.
+  const ip =
+    (headers().get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+    "desconocida";
+  if (!rateLimit(`registro:${ip}`, 5).ok) {
+    redirect(
+      `/registro?error=${encodeURIComponent("Demasiados intentos desde esta conexión. Probá de nuevo en un rato.")}${qs}`,
+    );
+  }
 
   if (!aceptaTerminos) {
     redirect(
@@ -88,7 +107,12 @@ export async function signUpAction(formData: FormData) {
       const admin = createAdminClient();
       await admin
         .from("profiles")
-        .update({ fecha_nacimiento: fechaNacimiento, genero })
+        .update({
+          fecha_nacimiento: fechaNacimiento,
+          genero,
+          // Prueba del consentimiento (Términos + Privacidad).
+          acepto_terminos_at: new Date().toISOString(),
+        })
         .eq("id", newUserId);
     } catch (err) {
       console.error("[signUpAction] no se pudo guardar edad/género:", err);

@@ -8,7 +8,7 @@ type Item = {
   label: string;
   match: (path: string) => boolean;
   icon: (active: boolean) => React.ReactNode;
-  badgeKey?: "solicitudes";
+  badgeKey?: "noLeidas";
 };
 
 const items: Item[] = [
@@ -48,9 +48,27 @@ const items: Item[] = [
     ),
   },
   {
+    href: "/notificaciones",
+    label: "Avisos",
+    badgeKey: "noLeidas",
+    match: (p) => p.startsWith("/notificaciones"),
+    icon: (active) => (
+      <svg
+        viewBox="0 0 24 24"
+        className={`h-6 w-6 ${active ? "stroke-rio" : "stroke-tinta/60"}`}
+        fill="none"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      </svg>
+    ),
+  },
+  {
     href: "/mis-salidas",
     label: "Mis salidas",
-    badgeKey: "solicitudes",
     match: (p) => p.startsWith("/mis-salidas"),
     icon: (active) => (
       <svg
@@ -87,9 +105,9 @@ const items: Item[] = [
 ];
 
 export default function BottomNav({
-  solicitudesPendientes = 0,
+  noLeidas = 0,
 }: {
-  solicitudesPendientes?: number;
+  noLeidas?: number;
 }) {
   const pathname = usePathname() ?? "";
 
@@ -101,8 +119,7 @@ export default function BottomNav({
       <ul className="mx-auto flex max-w-md items-stretch justify-around">
         {items.map((item) => {
           const active = item.match(pathname);
-          const badge =
-            item.badgeKey === "solicitudes" ? solicitudesPendientes : 0;
+          const badge = item.badgeKey === "noLeidas" ? noLeidas : 0;
           return (
             <li key={item.href} className="flex-1">
               <Link
@@ -113,7 +130,7 @@ export default function BottomNav({
                   {item.icon(active)}
                   {badge > 0 ? (
                     <span
-                      aria-label={`${badge} solicitudes pendientes`}
+                      aria-label={`${badge} notificaciones sin leer`}
                       className="absolute -right-2 -top-1.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white"
                     >
                       {badge > 9 ? "9+" : badge}

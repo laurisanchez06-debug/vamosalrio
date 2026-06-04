@@ -28,6 +28,21 @@ export default function RegistroPage({
         {searchParams.redirect ? (
           <input type="hidden" name="redirect" value={searchParams.redirect} />
         ) : null}
+
+        {/* Honeypot anti-bot: oculto para humanos, los bots lo completan. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden"
+        >
+          <label htmlFor="website">No completar este campo</label>
+          <input
+            id="website"
+            name="website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
         <div>
           <label
             htmlFor="email"
@@ -110,20 +125,20 @@ export default function RegistroPage({
           </select>
         </div>
 
-        <label className="flex cursor-pointer items-start gap-3">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-tinta/15 bg-white p-4">
           <input
             type="checkbox"
             name="acepta_terminos"
             value="1"
             required
-            className="mt-0.5 h-5 w-5 shrink-0 rounded border-tinta/30 text-rio accent-rio focus:ring-rio"
+            className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border border-tinta/40 bg-white accent-rio focus:ring-2 focus:ring-rio/40"
           />
           <span className="text-sm leading-relaxed text-tinta/70">
             Soy mayor de 18 años y acepto los{" "}
             <Link
               href="/terminos"
               target="_blank"
-              className="font-semibold text-rio"
+              className="font-semibold text-rio underline"
             >
               Términos y Condiciones
             </Link>{" "}
@@ -131,7 +146,7 @@ export default function RegistroPage({
             <Link
               href="/privacidad"
               target="_blank"
-              className="font-semibold text-rio"
+              className="font-semibold text-rio underline"
             >
               Política de Privacidad
             </Link>
