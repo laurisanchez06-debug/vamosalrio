@@ -10,14 +10,16 @@ export default function SalidaTabs({
   aportes,
   chat,
   pendientesCount = 0,
+  initialTab = "info",
 }: {
   info: React.ReactNode;
   tripulacion: React.ReactNode;
   aportes: React.ReactNode;
   chat: React.ReactNode;
   pendientesCount?: number;
+  initialTab?: TabKey;
 }) {
-  const [tab, setTab] = useState<TabKey>("info");
+  const [tab, setTab] = useState<TabKey>(initialTab);
 
   function cambiarTab(key: TabKey) {
     setTab(key);

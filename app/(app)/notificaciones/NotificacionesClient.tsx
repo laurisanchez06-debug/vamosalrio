@@ -103,7 +103,9 @@ export default function NotificacionesClient({ items }: { items: NotifItem[] }) 
         const tituloSalida = salida?.titulo ?? "una salida";
         const nombre = actor?.nombre ?? "Alguien";
         const nuevo = noLeidasIniciales.has(item.id);
-        const href = item.salida_id ? `/salida/${item.salida_id}` : "/feed";
+        const href = item.salida_id
+          ? `/salida/${item.salida_id}${item.tipo === "chat" ? "?tab=chat" : ""}`
+          : "/feed";
 
         const pendienteDeResponder =
           item.tipo === "solicitud_recibida" && part?.estado === "pendiente";
@@ -151,6 +153,22 @@ export default function NotificacionesClient({ items }: { items: NotifItem[] }) 
                   {tituloSalida}
                 </strong>{" "}
                 fue rechazada.
+              </>
+            );
+            break;
+          case "chat":
+            texto = (
+              <>
+                {nombre !== "Alguien" ? (
+                  <strong className="font-semibold text-noche">{nombre}</strong>
+                ) : (
+                  "Hay mensajes nuevos"
+                )}
+                {nombre !== "Alguien" ? " y la tripulación escribieron en " : " en "}
+                <strong className="font-semibold text-noche">
+                  {tituloSalida}
+                </strong>
+                . 💬
               </>
             );
             break;

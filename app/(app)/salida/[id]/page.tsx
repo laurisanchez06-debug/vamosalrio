@@ -110,7 +110,7 @@ export default async function SalidaDetallePage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { nueva?: string; toast?: string };
+  searchParams: { nueva?: string; toast?: string; tab?: string };
 }) {
   const supabase = createClient();
 
@@ -303,6 +303,17 @@ export default async function SalidaDetallePage({
       .order("created_at", { ascending: true })
       .limit(200);
     chatMensajes = (msgs ?? []) as unknown as typeof chatMensajes;
+  }
+
+  // Lecturas del chat (avatares de "visto"): el último mensaje leído por cada
+  // miembro. Solo se cargan si sos miembro (la RLS igual te bloquea si no).
+  let chatLecturas: { user_id: string; leido_at: string }[] = [];
+  if (esMiembro) {
+    const { data: lecturas } = await supabase
+      .from("chat_lecturas")
+      .select("user_id, leido_at")
+      .eq("salida_id", salida!.id);
+    chatLecturas = (lecturas ?? []) as unknown as typeof chatLecturas;
   }
 
   // Aportes — lista pública de "quién lleva qué".
@@ -574,6 +585,7 @@ export default async function SalidaDetallePage({
       currentUserId={user!.id}
       miembros={miembrosChat}
       initialMensajes={chatMensajes}
+      initialLecturas={chatLecturas}
       cerrado={chatCerrado}
     />
   ) : (
@@ -805,6 +817,7 @@ export default async function SalidaDetallePage({
         aportes={aportesPanel}
         chat={chatPanel}
         pendientesCount={isHost ? pendientes.length : 0}
+        initialTab={searchParams.tab === "chat" && esMiembro ? "chat" : "info"}
       />
 
       {searchParams.toast && TOAST_MENSAJES[searchParams.toast] ? (

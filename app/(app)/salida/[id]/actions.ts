@@ -16,9 +16,17 @@ import {
   emailInvitadoSeBajo,
 } from "@/lib/email";
 import { enviarPushAUsuarios } from "@/lib/push/send";
-import { crearNotificacion } from "@/lib/notificaciones";
+import { crearNotificacion, crearNotificacionChat } from "@/lib/notificaciones";
 
 const MS_48H = 48 * 60 * 60 * 1000;
+const CHAT_MAX = 1000;
+// Anti-spam del push de chat:
+// - "Mirando ahora": si su última lectura es de hace menos de esto, está en el
+//   chat → no le mandamos push.
+const CHAT_VIENDO_MS = 45 * 1000;
+// - Throttle: no más de 1 push por usuario por salida dentro de esta ventana
+//   (agrupa los mensajes seguidos en uno solo).
+const CHAT_THROTTLE_MS = 2 * 60 * 1000;
 
 type Result = { ok: true } | { error: string };
 
@@ -517,4 +525,163 @@ export async function cancelarSalidaAction(salidaId: string, motivo?: string) {
   }
 
   redirect("/feed?toast=salida-cancelada");
+}
+
+// Primeras palabras del mensaje para el cuerpo del push (sin cortar a la mitad
+// de una palabra, con elipsis si se recortó).
+function primerasPalabras(texto: string, max = 80): string {
+  const limpio = texto.trim().replace(/\s+/g, " ");
+  if (limpio.length <= max) return limpio;
+  const corte = limpio.slice(0, max);
+  const ultimoEspacio = corte.lastIndexOf(" ");
+  return `${(ultimoEspacio > 40 ? corte.slice(0, ultimoEspacio) : corte).trim()}…`;
+}
+
+type ChatMensaje = {
+  id: string;
+  user_id: string;
+  texto: string;
+  created_at: string;
+};
+
+// Envía un mensaje al chat de la tripulación. Inserta con el cliente sujeto a
+// RLS (la policy exige user_id = auth.uid() + ser miembro), y al lado dispara —
+// fire-and-forget — el push a la tripulación y la notificación in-app. Devuelve
+// el mensaje insertado para que el cliente lo agregue optimista (el realtime
+// igual lo reparte al resto).
+export async function enviarMensajeChatAction(
+  salidaId: string,
+  texto: string,
+): Promise<{ ok: true; mensaje: ChatMensaje } | { error: string }> {
+  const session = await getSessionUserOrError();
+  if (!session.user) return { error: session.error! };
+  const { supabase, user } = session;
+
+  const limpio = (texto ?? "").trim().slice(0, CHAT_MAX);
+  if (!limpio) return { error: "El mensaje está vacío." };
+
+  const { data: salida } = await supabase
+    .from("salidas")
+    .select("host_id, titulo, estado")
+    .eq("id", salidaId)
+    .maybeSingle();
+  if (!salida) return { error: "No encontramos la salida." };
+  if (salida.estado === "finalizada" || salida.estado === "cancelada") {
+    return { error: "Este chat está cerrado." };
+  }
+
+  const { data: insertado, error } = await supabase
+    .from("chat_mensajes")
+    .insert({ salida_id: salidaId, user_id: user.id, texto: limpio })
+    .select("id, user_id, texto, created_at")
+    .single();
+  if (error || !insertado) {
+    return { error: error?.message ?? "No pudimos enviar el mensaje." };
+  }
+  const mensaje = insertado as ChatMensaje;
+
+  // Push + notificación a la tripulación (menos el autor). Fire-and-forget:
+  // nunca rompe el envío del mensaje.
+  try {
+    await notificarChatTripulacion(salida.host_id, salidaId, mensaje, supabase);
+  } catch {
+    // best-effort
+  }
+
+  return { ok: true, mensaje };
+}
+
+async function notificarChatTripulacion(
+  hostId: string,
+  salidaId: string,
+  mensaje: ChatMensaje,
+  supabase: ReturnType<typeof createClient>,
+): Promise<void> {
+  // Tripulación confirmada = host + aceptados, menos el autor.
+  const { data: aceptados } = await supabase
+    .from("participaciones")
+    .select("user_id")
+    .eq("salida_id", salidaId)
+    .eq("estado", "aceptado");
+
+  const destinatarios = Array.from(
+    new Set<string>([hostId, ...(aceptados ?? []).map((a) => a.user_id)]),
+  ).filter((id) => id && id !== mensaje.user_id);
+  if (destinatarios.length === 0) return;
+
+  const admin = createAdminClient();
+
+  // Datos para anti-spam (con service-role, vemos las filas de todos):
+  // - lecturas recientes → "está mirando el chat ahora".
+  // - últimos push → throttle por destinatario.
+  const [{ data: lecturas }, { data: pushEstado }, prof, salidaInfo] =
+    await Promise.all([
+      admin
+        .from("chat_lecturas")
+        .select("user_id, leido_at")
+        .eq("salida_id", salidaId)
+        .in("user_id", destinatarios),
+      admin
+        .from("chat_push_estado")
+        .select("user_id, ultimo_push_at")
+        .eq("salida_id", salidaId)
+        .in("user_id", destinatarios),
+      supabase.from("profiles").select("nombre").eq("id", mensaje.user_id).maybeSingle(),
+      supabase.from("salidas").select("titulo").eq("id", salidaId).maybeSingle(),
+    ]);
+
+  const ahora = Date.now();
+  const viendoAhora = new Set(
+    (lecturas ?? [])
+      .filter(
+        (l) =>
+          l.leido_at && ahora - new Date(l.leido_at as string).getTime() < CHAT_VIENDO_MS,
+      )
+      .map((l) => l.user_id as string),
+  );
+  const ultimoPush = new Map(
+    (pushEstado ?? []).map((p) => [
+      p.user_id as string,
+      new Date(p.ultimo_push_at as string).getTime(),
+    ]),
+  );
+
+  const nombre = prof.data?.nombre ?? "Alguien";
+  const titulo = salidaInfo.data?.titulo ?? "tu salida";
+
+  // El que está mirando el chat no recibe push NI notificación en el centro
+  // (ya está leyendo). El resto: notificación in-app (deduplicada por no-leída)
+  // y push solo si pasó la ventana de throttle.
+  const aPushear: string[] = [];
+  for (const uid of destinatarios) {
+    if (viendoAhora.has(uid)) continue;
+
+    await crearNotificacionChat({
+      userId: uid,
+      salidaId,
+      actorId: mensaje.user_id,
+    });
+
+    const ultimo = ultimoPush.get(uid);
+    if (ultimo != null && ahora - ultimo < CHAT_THROTTLE_MS) continue;
+    aPushear.push(uid);
+  }
+
+  if (aPushear.length === 0) return;
+
+  await enviarPushAUsuarios(aPushear, {
+    titulo: `💬 ${titulo}`,
+    cuerpo: `${nombre}: ${primerasPalabras(mensaje.texto)}`,
+    url: `/salida/${salidaId}?tab=chat`,
+  });
+
+  // Registrar el push para el throttle (upsert por salida+user).
+  await admin.from("chat_push_estado").upsert(
+    aPushear.map((uid) => ({
+      salida_id: salidaId,
+      user_id: uid,
+      ultimo_push_at: new Date(ahora).toISOString(),
+    })),
+    { onConflict: "salida_id,user_id" },
+  );
 }
