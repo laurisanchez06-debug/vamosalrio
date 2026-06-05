@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularEsCapitan } from "@/lib/capitan";
 import { calcularRangoHost, calcularRangoTripulante } from "@/lib/rangos";
-import { calcularEdad, rangoEdadLabel } from "@/lib/format";
+import { calcularEdad, rangoEdadLabel, formatFechaCorta } from "@/lib/format";
 import {
   emailNuevaSolicitud,
   emailSolicitudAceptada,
@@ -215,6 +215,13 @@ export async function aceptarSolicitudAction(
           salidaId,
         });
       }
+      // Push al solicitante, al lado del email (fire-and-forget: el try padre
+      // ya lo aísla de la acción principal).
+      await enviarPushAUsuarios(part.user_id, {
+        titulo: "¡Te aceptaron! 🌊",
+        cuerpo: `Sos parte de ${salida.titulo ?? "la salida"}`,
+        url: `/salida/${salidaId}`,
+      });
       await crearNotificacion({
         userId: part.user_id,
         tipo: "solicitud_aceptada",
@@ -272,6 +279,12 @@ export async function rechazarSolicitudAction(
           titulo: salida.titulo ?? "la salida",
         });
       }
+      // Push al solicitante, con tacto (fire-and-forget vía el try padre).
+      await enviarPushAUsuarios(part.user_id, {
+        titulo: "Sobre tu solicitud",
+        cuerpo: `Tu pedido para ${salida.titulo ?? "la salida"} no fue aceptado esta vez`,
+        url: "/mis-salidas",
+      });
       await crearNotificacion({
         userId: part.user_id,
         tipo: "solicitud_rechazada",
@@ -517,6 +530,36 @@ export async function cancelarSalidaAction(salidaId: string, motivo?: string) {
         await emailSalidaCancelada({
           to: email,
           titulo: salida.titulo ?? "la salida",
+        });
+      }
+    }
+
+    // Push + notificación in-app a toda la tripulación confirmada (el host es
+    // quien cancela, así que queda fuera: no está entre los aceptados).
+    const miembros = (aceptados ?? [])
+      .map((a) => a.user_id as string)
+      .filter(Boolean);
+    if (miembros.length > 0) {
+      const { data: host } = await admin
+        .from("profiles")
+        .select("nombre")
+        .eq("id", user.id)
+        .maybeSingle();
+      const hostNombre = host?.nombre ?? "El host";
+      const tituloSalida = salida.titulo ?? "la salida";
+      const fecha = formatFechaCorta(salida.fecha_hora);
+
+      await enviarPushAUsuarios(miembros, {
+        titulo: "Salida cancelada",
+        cuerpo: `${hostNombre} canceló ${tituloSalida} del ${fecha}`,
+        url: "/mis-salidas",
+      });
+      for (const uid of miembros) {
+        await crearNotificacion({
+          userId: uid,
+          tipo: "cancelacion",
+          salidaId,
+          actorId: user.id,
         });
       }
     }

@@ -6,7 +6,8 @@ export type NotifTipo =
   | "solicitud_recibida"
   | "solicitud_aceptada"
   | "solicitud_rechazada"
-  | "chat";
+  | "chat"
+  | "cancelacion";
 
 // Inserta una notificación con service-role (el destinatario no suele ser
 // auth.uid() de quien dispara). Fire-and-forget: nunca rompe el flujo que la

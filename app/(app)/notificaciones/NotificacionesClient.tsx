@@ -172,6 +172,17 @@ export default function NotificacionesClient({ items }: { items: NotifItem[] }) 
               </>
             );
             break;
+          case "cancelacion":
+            texto = (
+              <>
+                Se canceló{" "}
+                <strong className="font-semibold text-noche">
+                  {tituloSalida}
+                </strong>
+                .
+              </>
+            );
+            break;
           default:
             texto = <>{item.tipo}</>;
         }
