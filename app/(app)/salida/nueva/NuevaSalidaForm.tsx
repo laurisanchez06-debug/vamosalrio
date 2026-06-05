@@ -52,6 +52,7 @@ const PASOS = [
   "¿Cómo llegan al agua?",
   "¿Cuándo y dónde se juntan?",
   "Lo básico",
+  "Cupos y costos",
   "Opciones",
   "¿Todo listo para zarpar?",
 ];
@@ -253,7 +254,7 @@ export default function NuevaSalidaForm({
     if (n === 4) {
       if (!titulo.trim()) return "Ponele un título a la salida.";
     }
-    if (n === 5) {
+    if (n === 6) {
       if (cierreOpcion === "custom") {
         if (!cierreCustom) return "Elegí cuándo cierra la inscripción.";
         const c = new Date(cierreCustom);
@@ -287,7 +288,7 @@ export default function NuevaSalidaForm({
 
   function publicar() {
     // Revalidar todos los pasos por las dudas.
-    for (let n = 1; n <= 5; n++) {
+    for (let n = 1; n <= 6; n++) {
       const msg = validarPaso(n);
       if (msg) {
         setError(msg);
@@ -621,6 +622,40 @@ export default function NuevaSalidaForm({
             </div>
 
             <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label
+                  htmlFor="descripcion"
+                  className="block text-sm font-medium text-noche"
+                >
+                  Descripción
+                </label>
+                <span
+                  className={`text-xs ${
+                    descripcion.length > MAX_DESC - 50
+                      ? "text-arena"
+                      : "text-tinta/40"
+                  }`}
+                >
+                  {descripcion.length}/{MAX_DESC}
+                </span>
+              </div>
+              <textarea
+                id="descripcion"
+                rows={3}
+                maxLength={MAX_DESC}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Contale a la tripulación de qué va la salida"
+                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* ── Paso 5: cupos y costos ─────────────────────────────────── */}
+        {step === 5 ? (
+          <div className="space-y-6">
+            <div>
               <label className="mb-1 block text-sm font-medium text-noche">
                 Cupos <span className="text-arena">*</span>
               </label>
@@ -733,35 +768,6 @@ export default function NuevaSalidaForm({
             </div>
 
             <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label
-                  htmlFor="descripcion"
-                  className="block text-sm font-medium text-noche"
-                >
-                  Descripción
-                </label>
-                <span
-                  className={`text-xs ${
-                    descripcion.length > MAX_DESC - 50
-                      ? "text-arena"
-                      : "text-tinta/40"
-                  }`}
-                >
-                  {descripcion.length}/{MAX_DESC}
-                </span>
-              </div>
-              <textarea
-                id="descripcion"
-                rows={3}
-                maxLength={MAX_DESC}
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                placeholder="Contale a la tripulación de qué va la salida"
-                className="block w-full resize-none rounded-2xl border border-tinta/15 bg-white px-4 py-3 text-base outline-none ring-rio/40 focus:border-rio focus:ring-2"
-              />
-            </div>
-
-            <div>
               <label
                 htmlFor="que_llevar"
                 className="mb-1 block text-sm font-medium text-noche"
@@ -780,8 +786,8 @@ export default function NuevaSalidaForm({
           </div>
         ) : null}
 
-        {/* ── Paso 5: opciones (todo opcional) ───────────────────────── */}
-        {step === 5 ? (
+        {/* ── Paso 6: opciones (todo opcional) ───────────────────────── */}
+        {step === 6 ? (
           <div className="space-y-6">
             <p className="rounded-2xl bg-rio/5 px-4 py-3 text-sm text-tinta/70">
               Todo esto es opcional. Dejá lo que no uses como está.
@@ -967,8 +973,8 @@ export default function NuevaSalidaForm({
           </div>
         ) : null}
 
-        {/* ── Paso 6: resumen ────────────────────────────────────────── */}
-        {step === 6 ? (
+        {/* ── Paso 7: resumen ────────────────────────────────────────── */}
+        {step === 7 ? (
           <div className="space-y-3">
             <ResumenRow
               label="Tipo"
@@ -1007,7 +1013,7 @@ export default function NuevaSalidaForm({
             <ResumenRow
               label="Cupos"
               value={`${cupos} personas`}
-              onEdit={() => setStep(4)}
+              onEdit={() => setStep(5)}
             />
             <ResumenRow
               label="Costos"
@@ -1016,12 +1022,12 @@ export default function NuevaSalidaForm({
                   ? `${formatPesos(total)} · ${formatPesos(porPersona)} c/u`
                   : "Sin costo"
               }
-              onEdit={() => setStep(4)}
+              onEdit={() => setStep(5)}
             />
             <ResumenRow
               label="Mínimo para salir"
               value={minimoView != null ? `${minimoView} personas` : "Sin mínimo"}
-              onEdit={() => setStep(5)}
+              onEdit={() => setStep(6)}
             />
             <ResumenRow
               label="Visibilidad"
@@ -1030,7 +1036,7 @@ export default function NuevaSalidaForm({
                   ? "🔒 Privada · solo por link"
                   : "Pública · aparece en el feed"
               }
-              onEdit={() => setStep(5)}
+              onEdit={() => setStep(6)}
             />
             <ResumenRow
               label="Cierre inscripción"
@@ -1053,7 +1059,7 @@ export default function NuevaSalidaForm({
                         ? "2 días antes"
                         : "3 días antes"
               }
-              onEdit={() => setStep(5)}
+              onEdit={() => setStep(6)}
             />
             <ResumenRow
               label="Edad"
@@ -1062,7 +1068,7 @@ export default function NuevaSalidaForm({
                   ? "Sin restricción"
                   : `De ${edadMin} a ${edadMax} años`
               }
-              onEdit={() => setStep(5)}
+              onEdit={() => setStep(6)}
             />
             {descripcion.trim() ? (
               <ResumenRow
@@ -1075,7 +1081,7 @@ export default function NuevaSalidaForm({
               <ResumenRow
                 label="Qué llevar"
                 value={queLlevar.trim()}
-                onEdit={() => setStep(4)}
+                onEdit={() => setStep(5)}
               />
             ) : null}
           </div>
