@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AuthCard from "@/components/AuthCard";
 import { GENEROS } from "@/lib/format";
+import FotoPerfilField from "@/components/FotoPerfilField";
 import { completarPerfilAction } from "./actions";
 
 const INTERESES = [
@@ -114,26 +115,10 @@ export default async function CompletarPerfilPage({
           </select>
         </div>
 
-        <div>
-          <label
-            htmlFor="foto"
-            className="mb-1 block text-sm font-medium text-noche"
-          >
-            Foto de perfil
-          </label>
-          <input
-            id="foto"
-            name="foto"
-            type="file"
-            accept="image/*"
-            className="block w-full text-sm text-tinta/70 file:mr-4 file:rounded-xl file:border-0 file:bg-noche file:px-4 file:py-2 file:text-sm file:font-semibold file:text-crema"
-          />
-          {profile?.foto_url ? (
-            <p className="mt-2 text-xs text-tinta/50">
-              Ya tenés una foto. Subí otra si querés cambiarla.
-            </p>
-          ) : null}
-        </div>
+        <FotoPerfilField
+          nombre={profile?.nombre ?? null}
+          fotoUrl={profile?.foto_url ?? null}
+        />
 
         <div>
           <label
